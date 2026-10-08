@@ -11,7 +11,7 @@ import { renderPage } from "../render-page";
 function parseArgs(argv: string[]) {
   const workersFlag = argv.indexOf("--workers");
   const workers = workersFlag >= 0 ? Number(argv[workersFlag + 1]) : 1;
-  const [from = 1, to = from] = argv.filter((a, i) => !a.startsWith("--") && i !== workersFlag + 1).map(Number);
+  const [from = 1, to = from] = argv.filter((a, i) => !a.startsWith("--") && (workersFlag < 0 || i !== workersFlag + 1)).map(Number);
   if (!(from >= 1 && to <= TOTAL_PAGES && from <= to && workers >= 1)) throw new Error("Usage: render <from> [to] [--workers n]");
   return { from, to, workers };
 }
