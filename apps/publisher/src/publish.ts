@@ -1,10 +1,10 @@
 import { LAUNCH_DATE, SITE_URL, localDate, pageForDate, type IsoDate } from "@daydan/core";
-import { buildAlbums } from "./album";
+import { buildDailyPost, type PostPart } from "./daily-post";
 import type { TelegramClient } from "./telegram";
 
 export interface PublishDeps {
-  telegram: Pick<TelegramClient, "sendMediaGroup">;
-  /** Records what was published, per (channel, Mecca date) and per album, so nothing is posted twice. */
+  telegram: Pick<TelegramClient, "sendPhoto" | "sendMediaGroup">;
+  /** Records what was published, per (channel, Mecca date) and per message, so nothing is posted twice. */
   publications: Pick<KVNamespace, "get" | "put">;
   config: { enabled: boolean; dryRun: boolean; channel: string; adminChatId: string };
   fetchImpl?: typeof fetch;
@@ -13,12 +13,12 @@ export interface PublishDeps {
 }
 
 export type PublishResult =
-  | { status: "published"; date: IsoDate; page: number; albums: number; dryRun: boolean }
+  | { status: "published"; date: IsoDate; page: number; messages: number; dryRun: boolean }
   | { status: "skipped"; date: IsoDate; reason: string };
 
 const MAX_ATTEMPTS = 3;
 const dayKey = (date: IsoDate) => `published:telegram:${date}`;
-const albumKey = (date: IsoDate, index: number) => `${dayKey(date)}:album:${index}`;
+const partKey = (date: IsoDate, index: number) => `${dayKey(date)}:part:${index}`;
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function withRetry(send: () => Promise<unknown>, sleep: (ms: number) => Promise<void>): Promise<void> {
@@ -33,10 +33,16 @@ async function withRetry(send: () => Promise<unknown>, sleep: (ms: number) => Pr
   }
 }
 
+function send(telegram: PublishDeps["telegram"], chatId: string, part: PostPart): Promise<unknown> {
+  return part.kind === "photo"
+    ? telegram.sendPhoto(chatId, part.photo, { caption: part.caption, buttons: part.buttons })
+    : telegram.sendMediaGroup(chatId, part.media);
+}
+
 /**
  * Posts today's page to the Telegram channel at most once per day.
- * Each album is recorded as soon as it is sent, so a run that failed halfway resumes
- * with the next album instead of posting the first one again.
+ * Each message is recorded as soon as it is sent, so a run that failed halfway resumes
+ * with the next message instead of posting the first one again.
  */
 export async function publishDaily(deps: PublishDeps, now: Date): Promise<PublishResult> {
   const { config, publications, telegram, fetchImpl = fetch, sleep = wait } = deps;
@@ -49,17 +55,17 @@ export async function publishDaily(deps: PublishDeps, now: Date): Promise<Publis
   if (await publications.get(dayKey(date))) return { status: "skipped", date, reason: "نُشر من قبل" };
 
   const page = beforeLaunch ? 1 : pageForDate(LAUNCH_DATE, now).page;
-  const albums = await buildAlbums(SITE_URL, page, fetchImpl);
+  const parts = await buildDailyPost(SITE_URL, page, fetchImpl);
   const chatId = config.dryRun ? config.adminChatId : config.channel;
   // A dry run records nothing, so it never blocks the real post.
   const record = (key: string, value: string) => (config.dryRun ? Promise.resolve() : publications.put(key, value));
 
-  for (const [index, album] of albums.entries()) {
-    if (!config.dryRun && (await publications.get(albumKey(date, index)))) continue;
-    await withRetry(() => telegram.sendMediaGroup(chatId, album), sleep);
-    await record(albumKey(date, index), now.toISOString());
+  for (const [index, part] of parts.entries()) {
+    if (!config.dryRun && (await publications.get(partKey(date, index)))) continue;
+    await withRetry(() => send(telegram, chatId, part), sleep);
+    await record(partKey(date, index), now.toISOString());
   }
 
-  await record(dayKey(date), JSON.stringify({ page, albums: albums.length, at: now.toISOString() }));
-  return { status: "published", date, page, albums: albums.length, dryRun: config.dryRun };
+  await record(dayKey(date), JSON.stringify({ page, messages: parts.length, at: now.toISOString() }));
+  return { status: "published", date, page, messages: parts.length, dryRun: config.dryRun };
 }
