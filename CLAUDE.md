@@ -8,7 +8,7 @@ Non-profit da'wah project. Owner: Mohamad AbdAlwahed (frontend engineer: React, 
 The owner wants to launch on **2026-10-23** (page 1). The repo follows the monorepo in `handoff/docs/03-architecture.md`, cut down to:
 - `packages/core`: schedule, types, constants (`LAUNCH_DATE`), tafsir grouping. Pure and tested.
 - `packages/content`: fetch + validate → `content/build/pages/<n>/page.json` + `mushaf.png`. Tafsir Muyassar often explains several ayahs in one passage: the first ayah carries `tafsirCovers`, the others `tafsirWith`.
-- `packages/media`: Playwright renders `post.png` (1080×1350, `templates/PostDaily.html`), `story.png` (1080×1920, `templates/StoryDaily.html`), `tafsir-NN.png` (36px), `caption.txt`, `cards.json`.
+- `packages/media`: Playwright renders `post.png` (1080×1350, `templates/PostDaily.html`), `story.png` (1080×1920, `templates/StoryDaily.html`), `tafsir-NN.png` (36px), `caption.txt`, `cards.json`. Fonts come only from `handoff/brand/fonts` (inlined; Google Fonts links are stripped), and every screenshot fails if any glyph is drawn in a fallback font (CDP `CSS.getPlatformFontsForNode`, port of `fontcheck.py`).
 - `apps/web`: Next.js static export on Cloudflare Pages. `scripts/sync-content.ts` is the single approval gate: only pages in `content/approved.json` are built. Reading progress goes through `ReadingRepository` (localStorage today, Supabase later).
 - `apps/publisher`: Cloudflare Worker cron, posts the daily album to Telegram from the site's files (KV idempotency, dry-run, kill switch, admin alert).
 - Instagram/Facebook/WhatsApp: manual posting of the generated images until Meta approval. Recitation is streamed from the Quran.com CDN, not re-uploaded (license pending).
