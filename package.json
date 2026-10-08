@@ -15,8 +15,8 @@
     "content:fetch": "pnpm --filter @daydan/content fetch",
     "content:render": "pnpm --filter @daydan/media render",
     "web:dev": "pnpm --filter @daydan/web dev",
-    "web:deploy": "pnpm --filter @daydan/web build && pnpm --filter @daydan/web deploy",
-    "publisher:deploy": "pnpm --filter @daydan/publisher deploy"
+    "web:deploy": "pnpm --filter @daydan/web build && pnpm --filter @daydan/web run deploy",
+    "publisher:deploy": "pnpm --filter @daydan/publisher run deploy"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

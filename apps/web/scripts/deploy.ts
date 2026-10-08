@@ -1,5 +1,5 @@
 /** Deploys out/ to Cloudflare Pages, refusing a preview build (one that contains unapproved pages). */
-import { execFileSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +13,5 @@ if (index.preview) {
   process.exit(1);
 }
 
-execFileSync("wrangler", ["pages", "deploy", OUT_DIR, "--project-name", "daydanquran", "--branch", "main"], {
-  stdio: "inherit",
-  shell: true,
-});
+// One command string (no argument array) because Windows needs a shell to find wrangler.cmd.
+execSync(`wrangler pages deploy "${OUT_DIR}" --project-name daydanquran --branch main`, { stdio: "inherit" });

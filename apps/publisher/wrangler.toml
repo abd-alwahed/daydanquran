@@ -10,7 +10,7 @@ crons = ["0 4 * * *"]
 
 [vars]
 TELEGRAM_CHANNEL = "@daydanquran"
-TELEGRAM_ENABLED = "0"
+TELEGRAM_ENABLED = "1"
 PUBLISH_DRY_RUN = "1"
 # ADMIN_CHAT_ID و TELEGRAM_BOT_TOKEN أسرار: npx wrangler secret put ...
 
