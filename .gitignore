@@ -3,6 +3,7 @@ node_modules/
 scratch/
 content/cache/
 content/build/
+content/v1/
 apps/web/.next/
 apps/web/out/
 apps/web/public/p/
@@ -12,3 +13,4 @@ apps/web/next-env.d.ts
 .env.*
 !.env.example
 *.tsbuildinfo
+__pycache__/
