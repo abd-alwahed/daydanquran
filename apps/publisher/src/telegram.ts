@@ -4,6 +4,11 @@ export interface InputMediaPhoto {
   caption?: string;
 }
 
+export interface InlineButton {
+  text: string;
+  callback_data: string;
+}
+
 interface TelegramResponse<T> {
   ok: boolean;
   result?: T;
@@ -35,12 +40,31 @@ export class TelegramClient {
     this.fetchImpl = (input, init) => fetchImpl(input, init);
   }
 
+  sendPhoto(chatId: string, photo: string, options: { caption?: string; buttons?: InlineButton[][] } = {}): Promise<unknown> {
+    return this.call("sendPhoto", {
+      chat_id: chatId,
+      photo,
+      caption: options.caption,
+      reply_markup: options.buttons ? { inline_keyboard: options.buttons } : undefined,
+    });
+  }
+
+  /** Two to ten photos shown as one album. */
   sendMediaGroup(chatId: string, media: InputMediaPhoto[]): Promise<unknown> {
     return this.call("sendMediaGroup", { chat_id: chatId, media });
   }
 
   sendMessage(chatId: string, text: string): Promise<unknown> {
     return this.call("sendMessage", { chat_id: chatId, text });
+  }
+
+  /** The small notice shown only to the person who pressed the button. */
+  answerCallbackQuery(callbackQueryId: string, text: string): Promise<unknown> {
+    return this.call("answerCallbackQuery", { callback_query_id: callbackQueryId, text });
+  }
+
+  setWebhook(url: string, secretToken: string, allowedUpdates: string[]): Promise<unknown> {
+    return this.call("setWebhook", { url, secret_token: secretToken, allowed_updates: allowedUpdates });
   }
 
   private async call<T>(method: string, body: object): Promise<T> {
