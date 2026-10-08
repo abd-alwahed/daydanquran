@@ -11,7 +11,7 @@ const tafsirFiles = (count: number) => Array.from({ length: count }, (_, i) => `
 function fakeSite(approved: boolean, tafsirCards = 2): typeof fetch {
   return (async (url: string) => {
     if (!approved) return new Response("", { status: 404 });
-    if (url.endsWith("/cards.json")) return Response.json({ mushaf: "mushaf.png", tafsir: tafsirFiles(tafsirCards) });
+    if (url.endsWith("/cards.json")) return Response.json({ mushaf: "mushaf.png", post: "post.png", story: "story.png", tafsir: tafsirFiles(tafsirCards) });
     if (url.endsWith("/caption.txt")) return new Response("وِرد اليوم");
     return new Response("", { status: 404 });
   }) as typeof fetch;
@@ -46,12 +46,12 @@ describe("publishDaily", () => {
     failures = 0;
   });
 
-  it("posts one album: the Mushaf page with the caption, then the tafsir cards", async () => {
+  it("posts one album: the designed post with the caption, then the tafsir cards", async () => {
     const result = await publishDaily(deps(), LAUNCH_MORNING);
     expect(result).toMatchObject({ status: "published", page: 1 });
     expect(sent).toHaveLength(1);
     expect(sent[0]?.chatId).toBe("@channel");
-    expect(sent[0]?.media.map((m) => m.media.split("/").pop())).toEqual(["mushaf.png", "tafsir-01.png", "tafsir-02.png"]);
+    expect(sent[0]?.media.map((m) => m.media.split("/").pop())).toEqual(["post.png", "tafsir-01.png", "tafsir-02.png"]);
     expect(sent[0]?.media[0]?.caption).toBe("وِرد اليوم");
   });
 

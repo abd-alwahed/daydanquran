@@ -12,8 +12,8 @@ async function fetchOk(url: string, fetchImpl: typeof fetch): Promise<Response> 
 }
 
 /**
- * The day's post as one or more albums: the Mushaf page first (carrying the caption),
- * then the tafsir cards in order, all served by the site.
+ * The day's post as one or more albums: the designed post (Mushaf page in the Daydan frame,
+ * carrying the caption) first, then the tafsir cards in order, all served by the site.
  */
 export async function buildAlbums(
   siteUrl: string,
@@ -24,7 +24,7 @@ export async function buildAlbums(
   const cards = (await (await fetchOk(`${base}/cards.json`, fetchImpl)).json()) as PageCards;
   const caption = await (await fetchOk(`${base}/caption.txt`, fetchImpl)).text();
 
-  const photos: InputMediaPhoto[] = [cards.mushaf, ...cards.tafsir].map((file, i) => ({
+  const photos: InputMediaPhoto[] = [cards.post, ...cards.tafsir].map((file, i) => ({
     type: "photo",
     media: `${base}/${file}`,
     ...(i === 0 ? { caption } : {}),
