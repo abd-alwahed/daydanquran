@@ -11,3 +11,4 @@ apps/web/next-env.d.ts
 .env
 .env.*
 !.env.example
+*.tsbuildinfo
