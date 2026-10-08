@@ -10,8 +10,11 @@ import { escapeHtml, fill, loadTemplate } from "./template";
 const POST: Size = { width: 1080, height: 1350 };
 const STORY: Size = { width: 1080, height: 1920 };
 const SQUARE: Size = { width: 1080, height: 1080 };
-/** Telegram album limit (10) minus the Mushaf page image. */
-export const MAX_TAFSIR_CARDS = 9;
+/**
+ * Sanity cap: the Mushaf page plus the cards must fit in two Telegram albums of 10.
+ * The longest page today (597, al-'Alaq) needs 10 cards.
+ */
+export const MAX_TAFSIR_CARDS = 19;
 
 // Tafsir.html's text box, adjusted: clipped so overflow can be measured, and 36px (the brand minimum
 // for post text, docs/06-brand.md) instead of 40px so most pages fit in 3–4 cards.

@@ -6,10 +6,12 @@ import type { InputMediaPhoto } from "./telegram";
 const LAUNCH_MORNING = new Date(`${LAUNCH_DATE}T04:00:00Z`);
 const HOUR = 3_600_000;
 
-function fakeSite(approved: boolean): typeof fetch {
+const tafsirFiles = (count: number) => Array.from({ length: count }, (_, i) => `tafsir-${String(i + 1).padStart(2, "0")}.png`);
+
+function fakeSite(approved: boolean, tafsirCards = 2): typeof fetch {
   return (async (url: string) => {
     if (!approved) return new Response("", { status: 404 });
-    if (url.endsWith("/cards.json")) return Response.json({ mushaf: "mushaf.png", tafsir: ["tafsir-01.png", "tafsir-02.png"] });
+    if (url.endsWith("/cards.json")) return Response.json({ mushaf: "mushaf.png", tafsir: tafsirFiles(tafsirCards) });
     if (url.endsWith("/caption.txt")) return new Response("وِرد اليوم");
     return new Response("", { status: 404 });
   }) as typeof fetch;
@@ -26,7 +28,7 @@ function fakeKv(): PublishDeps["publications"] {
 describe("publishDaily", () => {
   let sent: { chatId: string; media: InputMediaPhoto[] }[];
   let failures: number;
-  const deps = (overrides: Partial<PublishDeps["config"]> = {}, approved = true): PublishDeps => ({
+  const deps = (overrides: Partial<PublishDeps["config"]> = {}, approved = true, tafsirCards = 2): PublishDeps => ({
     telegram: {
       sendMediaGroup: async (chatId, media) => {
         if (failures-- > 0) throw new Error("network");
@@ -35,7 +37,7 @@ describe("publishDaily", () => {
     },
     publications: fakeKv(),
     config: { enabled: true, dryRun: false, channel: "@channel", adminChatId: "admin", ...overrides },
-    fetchImpl: fakeSite(approved),
+    fetchImpl: fakeSite(approved, tafsirCards),
     sleep: async () => {},
   });
 
@@ -73,9 +75,15 @@ describe("publishDaily", () => {
     expect(sent).toHaveLength(0);
   });
 
-  it("does nothing before launch day", async () => {
+  it("does not post to the channel before launch day", async () => {
     expect((await publishDaily(deps(), new Date(LAUNCH_MORNING.getTime() - 24 * HOUR))).status).toBe("skipped");
     expect(sent).toHaveLength(0);
+  });
+
+  it("rehearses day one with the admin before launch in dry-run mode", async () => {
+    const result = await publishDaily(deps({ dryRun: true }), new Date(LAUNCH_MORNING.getTime() - 24 * HOUR));
+    expect(result).toMatchObject({ status: "published", page: 1, dryRun: true });
+    expect(sent[0]?.chatId).toBe("admin");
   });
 
   it("refuses to publish an unapproved page", async () => {
@@ -95,5 +103,28 @@ describe("publishDaily", () => {
     await expect(publishDaily(d, LAUNCH_MORNING)).rejects.toThrow("network");
     failures = 0;
     expect((await publishDaily(d, LAUNCH_MORNING)).status).toBe("published");
+  });
+
+  it("posts a page with more than ten images as consecutive albums, caption on the first", async () => {
+    const result = await publishDaily(deps({}, true, 10), LAUNCH_MORNING);
+    expect(result).toMatchObject({ status: "published", albums: 2 });
+    expect(sent.map((s) => s.media.length)).toEqual([10, 1]);
+    expect(sent[0]?.media[0]?.caption).toBe("وِرد اليوم");
+    expect(sent[1]?.media[0]?.caption).toBeUndefined();
+  });
+
+  it("resumes with the second album after a failure, without reposting the first", async () => {
+    const d = deps({}, true, 10);
+    const send = d.telegram.sendMediaGroup;
+    let calls = 0;
+    d.telegram.sendMediaGroup = async (chatId, media) => {
+      if (++calls >= 2 && calls <= 4) throw new Error("network"); // second album fails three times
+      return send(chatId, media);
+    };
+    await expect(publishDaily(d, LAUNCH_MORNING)).rejects.toThrow("network");
+    expect(sent).toHaveLength(1);
+
+    await publishDaily(d, LAUNCH_MORNING);
+    expect(sent.map((s) => s.media.length)).toEqual([10, 1]);
   });
 });
