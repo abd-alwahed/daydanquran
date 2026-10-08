@@ -16,7 +16,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Renderer tests launch Chromium (font fallback check).
-      - run: pnpm --filter @daydan/media exec playwright install --with-deps chromium
+      - run: pnpm --filter @daydan/media exec playwright install --with-deps --only-shell chromium
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
