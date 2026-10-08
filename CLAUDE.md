@@ -2,7 +2,7 @@
 
 > «اجعل القرآن دَيْدَنك» — one page of the Quran every day, with Tafsir Muyassar and recitation, across every platform.
 
-Non-profit da'wah project. Owner: Mohamad AbdAlwahed (frontend engineer: React, Next.js, TypeScript, React Native). UI language: Arabic (RTL). The original handoff package lives in `handoff/` (docs at `handoff/docs/`, templates at `handoff/templates-html/`). Read it before writing code; `handoff/docs/02-decisions.md` is binding.
+Non-profit da'wah project. Owner: Mohamad AbdAlwahed (frontend engineer: React, Next.js, TypeScript, React Native). UI language: Arabic (RTL). The original handoff package lives in `handoff/` (docs at `handoff/docs/`, templates at `handoff/templates-html/`). Read it before writing code; `handoff/docs/02-decisions.md` is binding. **Where this file (or the code/commits that followed the owner's later decisions) differs from `handoff/docs`, this file wins**: the handoff docs are the original plan, and the owner has since changed several decisions (launch date, MVP scope, mushaf source, post sizes, D1 for Telegram reads). Don't re-raise these as contradictions.
 
 ## Current scope: fast MVP (decided by the owner on 2026-10-08)
 The owner wants to launch on **2026-10-23** (page 1). The repo follows the monorepo in `handoff/docs/03-architecture.md`, cut down to:
