@@ -12,10 +12,16 @@ interface TelegramResponse<T> {
 
 /** The few Bot API calls we use. */
 export class TelegramClient {
+  private readonly fetchImpl: typeof fetch;
+
   constructor(
     private readonly token: string,
-    private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+    fetchImpl: typeof fetch = fetch,
+  ) {
+    // Workers throw "Illegal invocation" when fetch is called as a method of another object
+    // (this.fetchImpl(...)), so keep a wrapper that calls it as a plain function.
+    this.fetchImpl = (input, init) => fetchImpl(input, init);
+  }
 
   sendMediaGroup(chatId: string, media: InputMediaPhoto[]): Promise<unknown> {
     return this.call("sendMediaGroup", { chat_id: chatId, media });
