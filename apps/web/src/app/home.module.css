@@ -1,0 +1,8 @@
+.hero {
+  text-align: center;
+  padding-block: 48px;
+  font-size: 18px;
+}
+.hero h1 {
+  font-size: 40px;
+}

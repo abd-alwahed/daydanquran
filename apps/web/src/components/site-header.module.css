@@ -1,0 +1,20 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block: 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  font-family: var(--dd-font-display);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--dd-primary);
+}
+.link {
+  text-decoration: none;
+  font-weight: 500;
+}

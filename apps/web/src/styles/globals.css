@@ -1,0 +1,60 @@
+@import "./tokens.css";
+
+:root {
+  --dd-font-display: var(--font-display), sans-serif;
+  --dd-font-reading: var(--font-reading), serif;
+  --dd-font-ui: var(--font-ui), sans-serif;
+  --dd-content-width: 680px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --dd-primary-100: #2c4a54;
+    --dd-gold-text: #d2ae68;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--dd-paper);
+  color: var(--dd-text);
+}
+
+body {
+  margin: 0;
+  font-family: var(--dd-font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--dd-primary);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--dd-font-display);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.container {
+  max-width: var(--dd-content-width);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

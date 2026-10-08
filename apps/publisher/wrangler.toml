@@ -1,0 +1,19 @@
+name = "daydan-publisher"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+# لا حاجة لرابط عام: الناشر يعمل بالجدولة فقط
+workers_dev = false
+
+# 07:00 بتوقيت مكة
+[triggers]
+crons = ["0 4 * * *"]
+
+[vars]
+TELEGRAM_CHANNEL = "@daydanquran"
+TELEGRAM_ENABLED = "0"
+PUBLISH_DRY_RUN = "1"
+# ADMIN_CHAT_ID و TELEGRAM_BOT_TOKEN أسرار: npx wrangler secret put ...
+
+[[kv_namespaces]]
+binding = "PUBLICATIONS"
+id = "b661ffa2ea7a432eb99d4cbe3490f11a"

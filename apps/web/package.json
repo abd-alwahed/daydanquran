@@ -1,0 +1,28 @@
+{
+  "name": "@daydan/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-content": "tsx scripts/sync-content.ts",
+    "dev": "tsx scripts/sync-content.ts --preview && next dev",
+    "build": "tsx scripts/sync-content.ts && next build",
+    "build:preview": "tsx scripts/sync-content.ts --preview && next build",
+    "preview": "pnpm dlx serve@14.2.4 out",
+    "deploy": "tsx scripts/deploy.ts",
+    "typecheck": "tsc -p .",
+    "lint": "eslint src scripts"
+  },
+  "dependencies": {
+    "@daydan/content": "workspace:^",
+    "@daydan/core": "workspace:^",
+    "next": "15.5.27",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "wrangler": "4.148.0"
+  }
+}

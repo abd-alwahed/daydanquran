@@ -1,0 +1,10 @@
+.pager {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+}
+.pager a {
+  font-weight: 700;
+  text-decoration: none;
+  padding-block: 12px;
+}

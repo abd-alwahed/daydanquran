@@ -1,0 +1,13 @@
+node_modules/
+.turbo/
+scratch/
+content/cache/
+content/build/
+apps/web/.next/
+apps/web/out/
+apps/web/public/p/
+apps/web/next-env.d.ts
+.wrangler/
+.env
+.env.*
+!.env.example

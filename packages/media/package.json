@@ -1,0 +1,20 @@
+{
+  "name": "@daydan/media",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "render": "tsx src/cli/render.ts",
+    "typecheck": "tsc -p .",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@daydan/content": "workspace:^",
+    "@daydan/core": "workspace:^",
+    "playwright": "1.56.1"
+  }
+}

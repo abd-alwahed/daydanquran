@@ -1,0 +1,13 @@
+/* White in every theme: the page image is black text on transparency. */
+.frame {
+  margin: 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid var(--dd-line);
+  border-radius: var(--dd-radius-card);
+}
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+}

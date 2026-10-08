@@ -1,0 +1,34 @@
+{
+  "name": "daydan",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "content:fetch": "pnpm --filter @daydan/content fetch",
+    "content:render": "pnpm --filter @daydan/media render",
+    "web:dev": "pnpm --filter @daydan/web dev",
+    "web:deploy": "pnpm --filter @daydan/web build && pnpm --filter @daydan/web deploy",
+    "publisher:deploy": "pnpm --filter @daydan/publisher deploy"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@next/eslint-plugin-next": "15.5.27",
+    "@types/node": "22.20.5",
+    "eslint": "9.39.5",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "turbo": "2.11.7",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "3.2.7"
+  }
+}

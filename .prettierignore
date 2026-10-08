@@ -1,0 +1,6 @@
+handoff/
+content/
+scratch/
+pnpm-lock.yaml
+**/.next/
+**/out/

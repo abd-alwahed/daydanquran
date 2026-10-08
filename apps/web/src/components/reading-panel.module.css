@@ -1,0 +1,30 @@
+.panel {
+  display: contents;
+}
+.thanks {
+  flex-basis: 100%;
+  min-height: 1.6em;
+  margin: 4px 0 0;
+  color: var(--dd-primary);
+  font-weight: 700;
+}
+.progress {
+  flex-basis: 100%;
+}
+.bar {
+  height: 8px;
+  border-radius: 8px;
+  background: var(--dd-primary-100);
+  overflow: hidden;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--dd-primary);
+  border-radius: 8px;
+}
+.progress p {
+  margin: 6px 0 0;
+  color: var(--dd-muted);
+  font-size: 13px;
+}

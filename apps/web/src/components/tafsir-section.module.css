@@ -1,0 +1,28 @@
+.section {
+  margin-top: 32px;
+}
+.section h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+.section h3 {
+  font-weight: 500;
+  font-size: 20px;
+  margin: 24px 0 8px;
+  color: var(--dd-primary);
+}
+.paragraph {
+  font-family: var(--dd-font-reading);
+  font-size: 21px;
+  line-height: 2;
+  margin: 0 0 12px;
+}
+.pointer {
+  composes: paragraph;
+  color: var(--dd-muted);
+  font-size: 18px;
+}
+.number {
+  color: var(--dd-primary);
+  font-weight: 600;
+}

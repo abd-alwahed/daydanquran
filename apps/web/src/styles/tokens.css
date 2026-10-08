@@ -1,0 +1,28 @@
+/* Daydan · دَيْدَن — design tokens */
+:root {
+  --dd-primary: #2E6475;   /* 5.93:1 on paper */
+  --dd-text: #1F3A44;      /* 10.85:1 on paper */
+  --dd-paper: #F6F3EC;
+  --dd-surface: #FFFFFF;
+  --dd-line: #E4DED0;
+  --dd-muted: #4B6169;     /* 5.9:1 on paper */
+  --dd-rain: #7FB3C2;      /* decoration only */
+  --dd-gold: #B8924A;      /* today only, decoration */
+  --dd-gold-text: #785F30; /* 5.45:1 on paper */
+  --dd-primary-50:#EEF3F4; --dd-primary-100:#DEE6E9; --dd-primary-200:#B8CAD0; --dd-primary-300:#92AEB7; --dd-primary-400:#608996;
+  --dd-primary-600:#275462; --dd-primary-700:#1F4450; --dd-primary-800:#18343D; --dd-primary-900:#11262C;
+  --dd-font-display: 'El Messiri', sans-serif;
+  --dd-font-reading: 'Scheherazade New', serif;
+  --dd-font-ui: 'Tajawal', sans-serif;
+  --dd-radius-card: 24px; --dd-radius-pill: 999px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --dd-paper: #122A31; --dd-surface: #1B3740; --dd-text: #EFEADF; --dd-muted: #A9BEC3;
+    --dd-primary: #8FC1CF; --dd-gold: #D2AE68; --dd-line: #2C4A54;
+  }
+}
+:root[data-theme="dark"] {
+  --dd-paper: #122A31; --dd-surface: #1B3740; --dd-text: #EFEADF; --dd-muted: #A9BEC3;
+  --dd-primary: #8FC1CF; --dd-gold: #D2AE68; --dd-line: #2C4A54;
+}

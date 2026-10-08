@@ -1,0 +1,11 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block: 20px 8px;
+}
+.reciter {
+  margin: 4px 0;
+  color: var(--dd-muted);
+  font-size: 13px;
+}
