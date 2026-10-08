@@ -18,10 +18,10 @@
 | `prompts/claude-code-prompts.md` | برومبتات Claude Code مرحلة بمرحلة |
 | `marketing/marketing-plan.md` | الخطة التسويقية |
 | `marketing/content-prompts.md` | برومبتات كتابة المنشورات والرسائل |
-| `brand/` | الشعار SVG/PNG، الأيقونات، صورة الحساب، `tokens.css`، `tokens.json` |
+| `brand/` | الشعار SVG/PNG، الأيقونات، صورة الحساب، `tokens.css`، `tokens.json`، والخطوط في `brand/fonts/` |
 | `templates-html/` | قوالب المنشورات HTML (مصدر توليد الصور آلياً) |
 | `templates-preview/` | صور معاينة لكل القوالب |
-| `reference-code/` | `schedule.mjs` (حساب صفحة اليوم، مختبر)، `fetch-pages.mjs` (جلب البيانات)، `feasibility/` (أدوات فحص التسجيل الصوتي) |
+| `reference-code/` | `schedule.mjs` (حساب صفحة اليوم، مختبر)، `fetch-pages.mjs` (جلب البيانات)، `feasibility/` (أدوات فحص التسجيل الصوتي)، `fontcheck.py` + `localfonts.py` (فحص خطوط الصور حرفاً حرفاً) |
 
 ## البدء مع Claude Code
 1. أنشئ مستودعاً جديداً `daydan`، وضع هذا المجلد داخله باسم `handoff/`.

@@ -30,7 +30,7 @@ Non-profit da'wah project. Owner: Mohamad AbdAlwahed (frontend engineer: React, 
 - Audio: concatenate per-ayah Husary murattal MP3s into one file per page with ffmpeg.
 
 ## Brand (short)
-Colors: primary `#2E6475`, text `#1F3A44`, paper `#F6F3EC`, rain `#7FB3C2` (decoration only), gold `#B8924A` (= "today" only). Fonts: El Messiri (display), Scheherazade New (reading/tafsir), Tajawal (UI). Tokens: `brand/tokens.css`, `brand/tokens.json`. Logo files: `brand/svg`, `brand/png`. Full rules: `docs/06-brand.md`.
+Colors: primary `#2E6475`, text `#1F3A44`, paper `#F6F3EC`, rain `#7FB3C2` (decoration only), gold `#B8924A` (= "today" only). Fonts: El Messiri (display), Scheherazade New (reading/tafsir), Tajawal (UI). Tokens: `brand/tokens.css`, `brand/tokens.json`. Logo files: `brand/svg`, `brand/png`. Full rules: `docs/06-brand.md`. Image rendering uses the local fonts in `brand/fonts/` (never Google Fonts in Playwright) and must pass `reference-code/fontcheck.py` with zero fallback glyphs.
 
 ## Working rules
 - Small PRs per phase (see `prompts/claude-code-prompts.md`). Write tests for: schedule math (timezone edges, 604 wraparound), content validators, idempotency, reading-log uniqueness.
