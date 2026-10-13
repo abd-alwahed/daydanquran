@@ -13,5 +13,11 @@ if (index.preview) {
   process.exit(1);
 }
 
+// The review screen (app/admin/*.dev.tsx) exists only in `next dev`. Never ship it.
+if (fs.existsSync(path.join(OUT_DIR, "admin"))) {
+  console.error("❌ البناء يحتوي على /admin، وشاشة المراجعة لا تُنشر أبداً.");
+  process.exit(1);
+}
+
 // One command string (no argument array) because Windows needs a shell to find wrangler.cmd.
 execSync(`wrangler pages deploy "${OUT_DIR}" --project-name daydanquran --branch main`, { stdio: "inherit" });

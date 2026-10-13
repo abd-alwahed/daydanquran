@@ -1,7 +1,7 @@
 /**
  * Decides which Mushaf pages the site publishes and copies their media into public/p/<n>/.
  * This is the one place where the approval gate is enforced:
- *   - normal build: only pages listed in content/approved.json;
+ *   - normal build: only pages listed in content/approved.json (edited by hand or from /admin in `pnpm dev`);
  *   - `--preview`: every built page, for local review. Such a build is marked and
  *     scripts/deploy.ts refuses to deploy it.
  * The Telegram publisher fetches these files by URL, so an unpublished page cannot be posted.
@@ -9,22 +9,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { LAUNCH_DATE, TOTAL_PAGES, todaysPage } from "@daydan/core";
-import { PAGES_DIR, pageDir, readApprovedPages } from "@daydan/content";
+import { pageDir, readApprovedPages, readBuiltPages } from "@daydan/content";
 import { PUBLIC_PAGES_DIR, PUBLISHED_INDEX_FILE, type PublishedIndex } from "../src/lib/published-pages";
 
 const PUBLISHED_FILE = /^(mushaf|post|story|tafsir-\d+)\.png$|^cards\.json$|^caption\.txt$/;
 /** Warn when fewer than this many upcoming days are approved. */
 const RUNWAY_DAYS = 7;
-
-async function builtPages(): Promise<number[]> {
-  const dirs = await fs.readdir(PAGES_DIR).catch(() => [] as string[]);
-  const pages: number[] = [];
-  for (const dir of dirs) {
-    const hasCards = await fs.access(path.join(PAGES_DIR, dir, "cards.json")).then(() => true, () => false);
-    if (hasCards) pages.push(Number(dir));
-  }
-  return pages.sort((a, b) => a - b);
-}
 
 async function copyPage(page: number): Promise<void> {
   const from = pageDir(page);
@@ -45,7 +35,7 @@ function warnIfRunwayIsShort(pages: readonly number[]): void {
 
 async function main(): Promise<void> {
   const preview = process.argv.includes("--preview");
-  const pages = preview ? await builtPages() : await readApprovedPages();
+  const pages = preview ? await readBuiltPages() : await readApprovedPages();
   if (pages.length === 0) {
     throw new Error("لا توجد صفحات معتمدة. أضف رقم صفحة واحدة على الأقل إلى content/approved.json بعد مراجعتها.");
   }
