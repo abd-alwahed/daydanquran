@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { LAUNCH_DATE } from "@daydan/core";
 import { Facebook, Instagram, memoryLedger, type GraphClient, type GraphParams } from "@daydan/publishers";
+import { isReelDay } from "./meta-post";
 import { publishMetaEvening, publishMetaMorning, publishMetaVideos, type MetaConfig, type MetaDeps } from "./publish-meta";
 
 const DAY = 24 * 3_600_000;
-const LAUNCH_MORNING = new Date(`${LAUNCH_DATE}T04:05:00Z`); // a Friday: not a reel day
-const REEL_DAY_MORNING = new Date(LAUNCH_MORNING.getTime() + DAY); // Saturday
+const LAUNCH_MORNING = new Date(`${LAUNCH_DATE}T04:05:00Z`); // a Friday
+const NO_REEL_MORNING = new Date(LAUNCH_MORNING.getTime() + DAY); // Saturday, page 2
+const REEL_DAY_MORNING = new Date(LAUNCH_MORNING.getTime() + 3 * DAY); // Monday, page 4
 
 const png = (width: number, height: number) => {
   const bytes = new Uint8Array(24);
@@ -171,6 +173,11 @@ describe("Meta publishing", () => {
   });
 
   describe("videos", () => {
+    it("has reels on Friday, Monday and Wednesday (Mecca dates)", () => {
+      const week = ["2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29"];
+      expect(week.filter(isReelDay)).toEqual(["2026-10-23", "2026-10-26", "2026-10-28"]);
+    });
+
     it("are off until META_VIDEO_ENABLED", async () => {
       const results = await publishMetaVideos(deps(), REEL_DAY_MORNING);
       expect(results.map((r) => r.status)).toEqual(["skipped", "skipped"]);
@@ -180,12 +187,12 @@ describe("Meta publishing", () => {
     it("posts the page video on Facebook and a reel on reel days", async () => {
       const results = await publishMetaVideos(deps({ videoEnabled: true }), REEL_DAY_MORNING);
       expect(results.map((r) => r.status)).toEqual(["published", "published"]);
-      expect(graph.posts("page/videos")[0]?.params.file_url).toMatch(/\/p\/2\/video\.mp4$/);
-      expect(graph.posts("ig/media")[0]?.params).toMatchObject({ media_type: "REELS", video_url: expect.stringMatching(/\/p\/2\/reel\.mp4$/) });
+      expect(graph.posts("page/videos")[0]?.params.file_url).toMatch(/\/p\/4\/video\.mp4$/);
+      expect(graph.posts("ig/media")[0]?.params).toMatchObject({ media_type: "REELS", video_url: expect.stringMatching(/\/p\/4\/reel\.mp4$/) });
     });
 
     it("posts no reel on other days", async () => {
-      const [, reel] = await publishMetaVideos(deps({ videoEnabled: true }), LAUNCH_MORNING);
+      const [, reel] = await publishMetaVideos(deps({ videoEnabled: true }), NO_REEL_MORNING);
       expect(reel).toMatchObject({ status: "skipped", detail: "ليس يوم ريل" });
     });
 

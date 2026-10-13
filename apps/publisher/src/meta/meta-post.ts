@@ -6,8 +6,8 @@ import { fetchOk } from "../daily-post";
 export const STORY_URL = `${SITE_URL}/reminder-story.jpg`;
 const STORY_ASPECT = { width: 9, height: 16 };
 
-/** Mecca weekdays with a reel (0 = Sunday): Saturday, Monday, Wednesday. */
-export const REEL_WEEKDAYS: readonly number[] = [6, 1, 3];
+/** Mecca weekdays with a reel (0 = Sunday): Friday, Monday, Wednesday. */
+export const REEL_WEEKDAYS: readonly number[] = [5, 1, 3];
 export const isReelDay = (date: string) => REEL_WEEKDAYS.includes(new Date(`${date}T00:00:00Z`).getUTCDay());
 
 /**
