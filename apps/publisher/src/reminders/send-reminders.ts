@@ -28,7 +28,8 @@ const RECENT_DAYS = 2;
 /** Sends every reminder due now. Safe to re-run: each (reader, local date, kind) is sent once. */
 export async function sendDueReminders(deps: ReminderDeps, now: Date): Promise<ReminderRunResult> {
   if (!deps.config.enabled) return { status: "skipped", reason: "reminders disabled (kill switch)" };
-  const today = todaysPage(LAUNCH_DATE, now);
+  // Before launch only the dry run works: it rehearses day one (page 1) with the admin.
+  const today = todaysPage(LAUNCH_DATE, now) ?? (deps.config.dryRun ? { page: 1 } : null);
   if (!today) return { status: "skipped", reason: "before launch" };
 
   const recentFrom = localDate(new Date(now.getTime() - RECENT_DAYS * 86_400_000), "UTC");

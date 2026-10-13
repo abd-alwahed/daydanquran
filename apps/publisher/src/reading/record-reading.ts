@@ -10,7 +10,7 @@ export interface ReadingOutcome {
 
 /**
  * Handles "قرأت" for a page.
- * Today's shared page also fills the reader's daily log (once per local date);
+ * Today's shared page (page 1 before launch) also fills the reader's daily log (once per local date);
  * any page, including one from an earlier day, counts toward the personal khatma.
  */
 export async function recordReading(
@@ -21,7 +21,8 @@ export async function recordReading(
 ): Promise<ReadingOutcome> {
   const reader = await store.findOrCreateReader("telegram", telegramUserId);
 
-  if (todaysPage(LAUNCH_DATE, now)?.page === page) {
+  // Before launch the only posts are dry-run rehearsals of day one, so page 1 stands in for today.
+  if ((todaysPage(LAUNCH_DATE, now)?.page ?? 1) === page) {
     await store.logDailyReading(reader.id, localDate(now, reader.timezone), page, "telegram");
   }
 

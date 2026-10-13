@@ -95,10 +95,19 @@ describe("sendDueReminders", () => {
     expect(await sendDueReminders({ ...deps, config: { ...deps.config, enabled: false } }, DAY3_MORNING)).toMatchObject({
       status: "skipped",
     });
-    expect(await sendDueReminders(deps, new Date("2026-10-20T04:30:00Z"))).toEqual({ status: "skipped", reason: "before launch" });
+    expect(await sendDueReminders(deps, new Date("2026-10-15T04:30:00Z"))).toEqual({ status: "skipped", reason: "before launch" });
     expect(await sendDueReminders({ ...deps, fetchImpl: site(404) }, DAY3_MORNING)).toMatchObject({ status: "skipped" });
     expect(sent).toHaveLength(0);
     expect(store.sends.size).toBe(0);
+  });
+
+  it("before launch, rehearses day one with the admin in dry run", async () => {
+    await store.save(2, "999", MORNING, "2026-10-14");
+    const dryRun = { ...deps, config: { ...deps.config, dryRun: true } };
+    const result = await sendDueReminders(dryRun, new Date("2026-10-15T04:30:00Z"));
+    expect(result).toMatchObject({ sent: 1, dryRunSkipped: 1 });
+    expect(sent).toEqual([expect.objectContaining({ chatId: "999", button: "read:1" })]);
+    expect(sent[0]?.text).toContain("https://daydanquran.pages.dev/p/1");
   });
 
   it("caps one run and leaves the rest to the next run", async () => {
