@@ -12,8 +12,21 @@ export interface InlineButton {
 interface TelegramResponse<T> {
   ok: boolean;
   result?: T;
+  error_code?: number;
   description?: string;
 }
+
+/** A Bot API call Telegram refused. `code` is its error_code (403: the user blocked the bot). */
+export class TelegramError extends Error {
+  constructor(
+    message: string,
+    readonly code: number,
+  ) {
+    super(message);
+  }
+}
+
+const keyboard = (buttons?: InlineButton[][]) => (buttons ? { inline_keyboard: buttons } : undefined);
 
 /** "123456789:AA…" — digits, colon, 35 URL-safe characters. */
 const TOKEN_SHAPE = /^\d{6,}:[A-Za-z0-9_-]{30,}$/;
@@ -45,7 +58,7 @@ export class TelegramClient {
       chat_id: chatId,
       photo,
       caption: options.caption,
-      reply_markup: options.buttons ? { inline_keyboard: options.buttons } : undefined,
+      reply_markup: keyboard(options.buttons),
     });
   }
 
@@ -54,8 +67,17 @@ export class TelegramClient {
     return this.call("sendMediaGroup", { chat_id: chatId, media });
   }
 
-  sendMessage(chatId: string, text: string): Promise<unknown> {
-    return this.call("sendMessage", { chat_id: chatId, text });
+  sendMessage(chatId: string, text: string, options: { buttons?: InlineButton[][] } = {}): Promise<unknown> {
+    return this.call("sendMessage", { chat_id: chatId, text, reply_markup: keyboard(options.buttons) });
+  }
+
+  editMessageText(chatId: string, messageId: number, text: string, options: { buttons?: InlineButton[][] } = {}): Promise<unknown> {
+    return this.call("editMessageText", {
+      chat_id: chatId,
+      message_id: messageId,
+      text,
+      reply_markup: keyboard(options.buttons),
+    });
   }
 
   /** The small notice shown only to the person who pressed the button. */
@@ -76,7 +98,9 @@ export class TelegramClient {
     const json = (await response.json()) as TelegramResponse<T>;
     // The Bot API answers 404 for every method when the token itself is wrong or revoked.
     if (response.status === 404) throw new Error(`Telegram ${method}: توكن البوت غير صالح أو أُلغي (404)`);
-    if (!json.ok) throw new Error(`Telegram ${method}: ${json.description ?? response.status}`);
+    if (!json.ok) {
+      throw new TelegramError(`Telegram ${method}: ${json.description ?? response.status}`, json.error_code ?? response.status);
+    }
     return json.result as T;
   }
 }

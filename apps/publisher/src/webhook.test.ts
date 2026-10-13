@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { LAUNCH_DATE } from "@daydan/core";
 import { parseReadButton, readButton } from "./read-button";
 import { MemoryReadingStore } from "./reading/memory-store";
+import { MemoryReminderStore } from "./reminders/memory-store";
 import { handleWebhook, type TelegramUpdate, type WebhookDeps } from "./webhook";
 import { secretsMatch, webhookSecret } from "./webhook-secret";
 
@@ -22,17 +23,24 @@ const press = (userId: number, data: string): TelegramUpdate => ({
 describe("handleWebhook", () => {
   let answers: string[];
   let messages: { chatId: string; text: string }[];
+  let edits: { chatId: string; messageId: number; text: string; buttons: string[] }[];
+  let reminders: MemoryReminderStore;
   let deps: WebhookDeps;
 
   beforeEach(() => {
     answers = [];
     messages = [];
+    edits = [];
+    reminders = new MemoryReminderStore();
     deps = {
       telegram: {
         answerCallbackQuery: async (_id, text) => void answers.push(text),
         sendMessage: async (chatId, text) => void messages.push({ chatId, text }),
+        editMessageText: async (chatId, messageId, text, options) =>
+          void edits.push({ chatId, messageId, text, buttons: options?.buttons?.flat().map((b) => b.callback_data) ?? [] }),
       },
       store: new MemoryReadingStore(),
+      reminders,
       expectedSecret: SECRET,
       now: () => LAUNCH_NOON,
     };
@@ -66,6 +74,72 @@ describe("handleWebhook", () => {
     await handleWebhook(call({ message: { chat: { id: 5, type: "private" }, text: "/start" } }), deps);
     await handleWebhook(call({ message: { chat: { id: -9, type: "group" }, text: "/start" } }), deps);
     expect(messages.map((m) => m.chatId)).toEqual(["5"]);
+  });
+});
+
+describe("reminder settings in the bot", () => {
+  let messages: string[];
+  let edits: { text: string; buttons: string[] }[];
+  let reminders: MemoryReminderStore;
+  let deps: WebhookDeps;
+
+  const command = (text: string) => call({ message: { chat: { id: 7, type: "private" }, text } });
+  const tap = (data: string): TelegramUpdate => ({
+    callback_query: { id: "q", from: { id: 7 }, data, message: { message_id: 50, chat: { id: 7, type: "private" } } },
+  });
+
+  beforeEach(() => {
+    messages = [];
+    edits = [];
+    reminders = new MemoryReminderStore();
+    deps = {
+      telegram: {
+        answerCallbackQuery: async () => {},
+        sendMessage: async (_chatId, text) => void messages.push(text),
+        editMessageText: async (_chatId, _messageId, text, options) =>
+          void edits.push({ text, buttons: options?.buttons?.flat().map((b) => b.callback_data) ?? [] }),
+      },
+      store: new MemoryReadingStore(),
+      reminders,
+      expectedSecret: SECRET,
+      now: () => LAUNCH_NOON,
+    };
+  });
+
+  it("/reminder turns on the 07:00 Mecca reminder", async () => {
+    await handleWebhook(command("/reminder"), deps);
+    expect(messages[0]).toContain("الساعة ٧ صباحاً بتوقيت مكة المكرمة");
+    const saved = await reminders.get(1);
+    expect(saved).toMatchObject({ chatId: "7", enabled: true, settings: { time: { kind: "fixed", minutes: 420 } } });
+    expect(saved?.settings.city.timeZone).toBe("Asia/Riyadh");
+    expect(reminders.reminders.get(1)?.since).toBe(LAUNCH_DATE);
+  });
+
+  it("toggles the evening nudge and the Ramadan message, stops, and keeps the toggles when turned back on", async () => {
+    await handleWebhook(command("/reminder"), deps);
+    await handleWebhook(call(tap("rem:nudge")), deps);
+    await handleWebhook(call(tap("rem:ramadan")), deps);
+    expect(edits.at(-1)?.buttons).toEqual(["rem:nudge", "rem:ramadan", "rem:off"]);
+    expect((await reminders.get(1))?.settings).toMatchObject({ eveningNudge: false, ramadanMessage: false });
+
+    await handleWebhook(call(tap("rem:off")), deps);
+    expect((await reminders.get(1))?.enabled).toBe(false);
+    await handleWebhook(command("/reminder"), deps);
+    expect(await reminders.get(1)).toMatchObject({ enabled: true, settings: { eveningNudge: false, ramadanMessage: false } });
+
+    await handleWebhook(command("/stop"), deps);
+    expect((await reminders.get(1))?.enabled).toBe(false);
+  });
+
+  it("ignores settings buttons pressed outside a private chat or before /reminder", async () => {
+    await handleWebhook(call(tap("rem:nudge")), deps);
+    expect(reminders.reminders.size).toBe(0);
+    await handleWebhook(command("/reminder"), deps);
+    const inGroup: TelegramUpdate = {
+      callback_query: { id: "q", from: { id: 7 }, data: "rem:off", message: { message_id: 1, chat: { id: -5, type: "group" } } },
+    };
+    await handleWebhook(call(inGroup), deps);
+    expect((await reminders.get(1))?.enabled).toBe(true);
   });
 });
 

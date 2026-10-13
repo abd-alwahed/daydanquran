@@ -1,11 +1,15 @@
 import type { Env } from "./env";
 import { publishDaily } from "./publish";
 import { D1ReadingStore } from "./reading/d1-store";
+import { D1ReminderStore } from "./reminders/d1-store";
+import { sendDueReminders } from "./reminders/send-reminders";
 import { TelegramClient } from "./telegram";
 import { ALLOWED_UPDATES, handleWebhook } from "./webhook";
 import { webhookSecret } from "./webhook-secret";
 
 const WEBHOOK_PATH = "/telegram/webhook";
+/** wrangler.toml [triggers]: the daily post; every other cron is the reminder sweep. */
+const DAILY_POST_CRON = "0 4 * * *";
 
 // Secrets pasted into a terminal can carry a trailing newline or space, which breaks the API URL.
 const botToken = (env: Env) => env.TELEGRAM_BOT_TOKEN.trim();
@@ -46,6 +50,26 @@ async function runScheduled(env: Env, now: Date): Promise<void> {
   }
 }
 
+async function runReminders(env: Env, now: Date): Promise<void> {
+  const telegram = new TelegramClient(botToken(env));
+  const result = await sendDueReminders(
+    {
+      store: new D1ReminderStore(env.DB),
+      telegram,
+      config: { enabled: env.REMINDERS_ENABLED === "1", dryRun: env.PUBLISH_DRY_RUN === "1", adminChatId: adminChatId(env) },
+    },
+    now,
+  ).catch(async (error: unknown) => {
+    await alertAdmin(telegram, env, "فشلت جولة التذكيرات", error);
+    throw error;
+  });
+  console.log(JSON.stringify(result));
+  // Failed sends are released and retried by the next run (15 minutes later).
+  if (result.status === "done" && result.failed > 0) {
+    await alertAdmin(telegram, env, "تعذّر إرسال بعض التذكيرات", `${result.failed} تذكير، ستُعاد المحاولة في الجولة التالية`);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -53,11 +77,13 @@ export default {
     return handleWebhook(request, {
       telegram: new TelegramClient(botToken(env)),
       store: new D1ReadingStore(env.DB),
+      reminders: new D1ReminderStore(env.DB),
       expectedSecret: await webhookSecret(botToken(env)),
       now: () => new Date(),
     });
   },
   scheduled(controller, env, ctx) {
-    ctx.waitUntil(runScheduled(env, new Date(controller.scheduledTime)));
+    const now = new Date(controller.scheduledTime);
+    ctx.waitUntil(controller.cron === DAILY_POST_CRON ? runScheduled(env, now) : runReminders(env, now));
   },
 } satisfies ExportedHandler<Env>;
