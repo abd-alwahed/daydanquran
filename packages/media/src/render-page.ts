@@ -95,6 +95,20 @@ async function renderTafsirCards(browser: Browser, data: PageData, dir: string):
   return files;
 }
 
+/**
+ * The 20:00 evening reminder story. It names no page, so it is one file for every day,
+ * rendered once rather than per page (and is not part of the frozen page release).
+ */
+export async function renderReminderStory(browser: Browser, file: string): Promise<void> {
+  const canvas = await Canvas.open(browser, STORY);
+  try {
+    await canvas.load(await loadTemplate("StoryReminder.html"));
+    await canvas.screenshot(file);
+  } finally {
+    await canvas.close();
+  }
+}
+
 /** Renders every generated asset of one page into `dir` and returns the manifest written to cards.json. */
 export async function renderPage(browser: Browser, data: PageData, dir: string): Promise<PageCards> {
   for (const f of await fs.readdir(dir)) if (/^tafsir-\d+\.png$/.test(f)) await fs.rm(path.join(dir, f));
