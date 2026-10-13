@@ -109,12 +109,34 @@ export async function renderReminderStory(browser: Browser, file: string): Promi
   }
 }
 
+/** Instagram's copy of the story (the daily story, posted by apps/publisher). */
+export const INSTAGRAM_STORY = "ig-story.jpg";
+
+/**
+ * Writes story.png as JPEG, the only image format Instagram's publishing API accepts. The PNG is
+ * placed as it is, at its own size, on a canvas of the same size: nothing is redrawn.
+ */
+export async function renderInstagramStory(browser: Browser, dir: string): Promise<void> {
+  const png = `data:image/png;base64,${(await fs.readFile(path.join(dir, "story.png"))).toString("base64")}`;
+  const canvas = await Canvas.open(browser, STORY);
+  try {
+    await canvas.load(
+      `<!doctype html><html><head></head><body style="margin:0"><div dir="rtl" style="width:${STORY.width}px;height:${STORY.height}px">` +
+        `<img src="${png}" width="${STORY.width}" height="${STORY.height}" alt="" style="display:block"></div></body></html>`,
+    );
+    await canvas.screenshot(path.join(dir, INSTAGRAM_STORY));
+  } finally {
+    await canvas.close();
+  }
+}
+
 /** Renders every generated asset of one page into `dir` and returns the manifest written to cards.json. */
 export async function renderPage(browser: Browser, data: PageData, dir: string): Promise<PageCards> {
   for (const f of await fs.readdir(dir)) if (/^tafsir-\d+\.png$/.test(f)) await fs.rm(path.join(dir, f));
 
   await renderMushafTemplate(browser, data, dir, "PostDaily.html", POST, "post.png");
   await renderMushafTemplate(browser, data, dir, "StoryDaily.html", STORY, "story.png");
+  await renderInstagramStory(browser, dir);
   const tafsir = await renderTafsirCards(browser, data, dir);
 
   const cards: PageCards = { mushaf: "mushaf.png", post: "post.png", story: "story.png", tafsir };

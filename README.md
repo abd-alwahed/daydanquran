@@ -7,7 +7,7 @@
 ```
 apps/
   web/          موقع Next.js (تصدير ثابت) → Cloudflare Pages: daydanquran.pages.dev
-  publisher/    Cloudflare Worker: نشر صفحة اليوم على تيليجرام 07:00 بتوقيت مكة
+  publisher/    Cloudflare Worker: نشر صفحة اليوم على تيليجرام 07:00 بتوقيت مكة، وستوري إنستغرام 07:01
 packages/
   core/         حساب صفحة اليوم، الأنواع، الثوابت، تجميع التفسير، الأرقام العربية
   content/      جلب الصفحات من المصادر والتحقق منها → content/build/pages/<n>/
@@ -81,6 +81,11 @@ pnpm deploy
 - `REMINDERS_ENABLED = "1"` يشغّل التذكيرات، و`"0"` يوقفها فوراً.
 - مع `PUBLISH_DRY_RUN = "1"` لا يصل التذكير إلا إلى `ADMIN_CHAT_ID`: جرّبه على نفسك.
 - القواعد في `packages/core/src/reminders.ts`: تذكير يومي وتذكير مسائي واحد (٩ م)، بعد ٧ أيام بلا قراءة يصبح أسبوعياً، وبعد ٣٠ يوماً يتوقف، إلا رسالة واحدة في أول رمضان لمن أبقاها مفعّلة.
+
+### ٧. ستوري إنستغرام
+كل صباح 07:01 بتوقيت مكة تُنشر صورة ستوري صفحة اليوم على إنستغرام، دون حاجة لربط فيسبوك. الإعداد والتوكن في [`docs/instagram-story.md`](docs/instagram-story.md).
+- `INSTAGRAM_ENABLED = "1"` يشغّله، و`"0"` يوقفه فوراً.
+- `INSTAGRAM_DRY_RUN = "1"` يرسل للمدير رابط الصورة فقط دون نشر.
 
 ## يوم الإطلاق
 `LAUNCH_DATE` في `packages/core/src/constants.ts`. يوم الإطلاق هو الصفحة ١، ولا يُغيَّر بعد الإطلاق.

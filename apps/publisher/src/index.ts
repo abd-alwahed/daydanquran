@@ -1,4 +1,7 @@
 import type { Env } from "./env";
+import { Instagram } from "./instagram/instagram";
+import { publishStory } from "./instagram/story";
+import { instagramToken } from "./instagram/token";
 import { publishDaily } from "./publish";
 import { D1ReadingStore } from "./reading/d1-store";
 import { D1ReminderStore } from "./reminders/d1-store";
@@ -8,8 +11,12 @@ import { ALLOWED_UPDATES, handleWebhook } from "./webhook";
 import { webhookSecret } from "./webhook-secret";
 
 const WEBHOOK_PATH = "/telegram/webhook";
-/** wrangler.toml [triggers]: the daily post; every other cron is the reminder sweep. */
+/**
+ * wrangler.toml [triggers]: the daily Telegram post (07:00 Mecca), the Instagram story (07:01, its own
+ * invocation so neither can hold the other back); every other cron is the reminder sweep.
+ */
 const DAILY_POST_CRON = "0 4 * * *";
+const INSTAGRAM_STORY_CRON = "1 4 * * *";
 
 // Secrets pasted into a terminal can carry a trailing newline or space, which breaks the API URL.
 const botToken = (env: Env) => env.TELEGRAM_BOT_TOKEN.trim();
@@ -70,6 +77,38 @@ async function runReminders(env: Env, now: Date): Promise<void> {
   }
 }
 
+async function runInstagramStory(env: Env, now: Date): Promise<void> {
+  const telegram = new TelegramClient(botToken(env));
+  try {
+    // Refreshed whatever the switches say, so the token never expires while the story is off.
+    const token = await instagramToken(env.PUBLICATIONS, env.INSTAGRAM_ACCESS_TOKEN, now);
+    if (token?.warning) await alertAdmin(telegram, env, "تجديد توكن إنستغرام", token.warning);
+    const userId = env.INSTAGRAM_USER_ID?.trim();
+    const result = await publishStory(
+      {
+        instagram: token && userId ? new Instagram(token.token, userId) : undefined,
+        ledger: env.PUBLICATIONS,
+        config: {
+          enabled: env.INSTAGRAM_ENABLED === "1",
+          dryRun: env.PUBLISH_DRY_RUN === "1" || env.INSTAGRAM_DRY_RUN === "1",
+        },
+        report: (text) => telegram.sendMessage(adminChatId(env), text),
+      },
+      now,
+    );
+    console.log(JSON.stringify(result));
+  } catch (error) {
+    await alertAdmin(telegram, env, "فشل نشر ستوري إنستغرام", error);
+    throw error;
+  }
+}
+
+function runCron(cron: string, env: Env, now: Date): Promise<void> {
+  if (cron === DAILY_POST_CRON) return runScheduled(env, now);
+  if (cron === INSTAGRAM_STORY_CRON) return runInstagramStory(env, now);
+  return runReminders(env, now);
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -84,6 +123,6 @@ export default {
   },
   scheduled(controller, env, ctx) {
     const now = new Date(controller.scheduledTime);
-    ctx.waitUntil(controller.cron === DAILY_POST_CRON ? runScheduled(env, now) : runReminders(env, now));
+    ctx.waitUntil(runCron(controller.cron, env, now));
   },
 } satisfies ExportedHandler<Env>;

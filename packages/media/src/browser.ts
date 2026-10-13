@@ -112,7 +112,8 @@ export class Canvas {
   /** Checks every glyph's font (see `assertNoFallback`), then captures the canvas. */
   async screenshot(file: string): Promise<void> {
     await this.assertNoFallback();
-    await this.page.locator(CANVAS).screenshot({ path: file });
+    // JPEG only for Instagram, which accepts no other image format; at high quality.
+    await this.page.locator(CANVAS).screenshot({ path: file, ...(file.endsWith(".jpg") ? { quality: 95 } : {}) });
   }
 
   close(): Promise<void> {
