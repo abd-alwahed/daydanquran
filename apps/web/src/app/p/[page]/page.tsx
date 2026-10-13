@@ -8,7 +8,7 @@ import { PagePager } from "@/components/page-pager";
 import { ReadingPanel } from "@/components/reading-panel";
 import { RecitationPlayer } from "@/components/recitation-player";
 import { TafsirSection } from "@/components/tafsir-section";
-import { readPublishedPages } from "@/lib/published-pages";
+import { readPublishedIndex, readPublishedPages } from "@/lib/published-pages";
 
 interface Props {
   params: Promise<{ page: string }>;
@@ -35,7 +35,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MushafPage({ params }: Props) {
   const data = await readPage(Number((await params).page));
-  const available = new Set(await readPublishedPages());
+  const { pages, juzStarts } = await readPublishedIndex();
+  const available = new Set(pages);
 
   return (
     <article>
@@ -43,7 +44,7 @@ export default async function MushafPage({ params }: Props) {
       <MushafImage page={data.page} />
       <div className={actions.actions}>
         <RecitationPlayer tracks={data.ayahs.map((a) => a.audio)} />
-        <ReadingPanel page={data.page} />
+        <ReadingPanel page={data.page} juzStarts={juzStarts} />
       </div>
       <p className={actions.reciter}>التلاوة: الشيخ محمود خليل الحصري (مرتّل)</p>
       <TafsirSection data={data} />

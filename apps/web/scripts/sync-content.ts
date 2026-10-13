@@ -8,8 +8,8 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { LAUNCH_DATE, TOTAL_PAGES, todaysPage } from "@daydan/core";
-import { pageDir, readApprovedPages, readBuiltPages } from "@daydan/content";
+import { LAUNCH_DATE, TOTAL_JUZ, TOTAL_PAGES, todaysPage } from "@daydan/core";
+import { pageDir, readApprovedPages, readBuiltPages, readPage } from "@daydan/content";
 import { PUBLIC_PAGES_DIR, PUBLISHED_INDEX_FILE, type PublishedIndex } from "../src/lib/published-pages";
 
 const PUBLISHED_FILE = /^(mushaf|post|story|tafsir-\d+)\.png$|^cards\.json$|^caption\.txt$/;
@@ -23,6 +23,19 @@ async function copyPage(page: number): Promise<void> {
   const files = (await fs.readdir(from)).filter((f) => PUBLISHED_FILE.test(f));
   if (!files.includes("cards.json")) throw new Error(`الصفحة ${page} معتمدة لكن صورها لم تُولَّد بعد`);
   await Promise.all(files.map((f) => fs.copyFile(path.join(from, f), path.join(to, f))));
+}
+
+/** First page of each juz, read from every page's data (a page shared by two juz starts the later one). */
+async function readJuzStarts(): Promise<number[]> {
+  const starts: number[] = [];
+  for (let page = 1; page <= TOTAL_PAGES; page++) {
+    const { juz } = await readPage(page).catch(() => {
+      throw new Error(`content/build/pages/${page}/page.json مفقود: شغّل pnpm content:fetch أولاً`);
+    });
+    starts[juz[juz.length - 1]! - 1] ??= page;
+  }
+  if (starts.filter(Boolean).length !== TOTAL_JUZ) throw new Error("بيانات الأجزاء ناقصة");
+  return starts;
 }
 
 function warnIfRunwayIsShort(pages: readonly number[]): void {
@@ -42,7 +55,7 @@ async function main(): Promise<void> {
 
   await fs.rm(PUBLIC_PAGES_DIR, { recursive: true, force: true });
   for (const page of pages) await copyPage(page);
-  const index: PublishedIndex = { pages, preview };
+  const index: PublishedIndex = { pages, juzStarts: await readJuzStarts(), preview };
   await fs.writeFile(PUBLISHED_INDEX_FILE, JSON.stringify(index));
 
   console.log(`✅ ${pages.length} صفحة${preview ? " (معاينة: كل الصفحات المولّدة، لا تُنشر)" : " معتمدة"} في public/p`);

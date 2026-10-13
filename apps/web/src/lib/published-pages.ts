@@ -8,6 +8,8 @@ export const PUBLISHED_INDEX_FILE = path.join(PUBLIC_PAGES_DIR, "index.json");
 /** Written by scripts/sync-content.ts. The site builds exactly these pages. */
 export interface PublishedIndex {
   pages: number[];
+  /** First page of each juz (30 entries), from the content data, for the khatma bars. */
+  juzStarts: number[];
   /** True for a local review build, which must never be deployed. */
   preview: boolean;
 }

@@ -9,9 +9,10 @@ export function SiteHeader() {
         <BrandMark />
         <span>دَيْدَن</span>
       </Link>
-      <Link href="/about/" className={styles.link}>
-        عن دَيْدَن
-      </Link>
+      <nav className={styles.nav} aria-label="القائمة">
+        <Link href="/qada/">اقضِ ما فاتك</Link>
+        <Link href="/about/">عن دَيْدَن</Link>
+      </nav>
     </header>
   );
 }
