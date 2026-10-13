@@ -5,3 +5,5 @@ export * from "./arabic";
 export * from "./tafsir";
 export * from "./page-labels";
 export * from "./progress";
+export * from "./cities";
+export * from "./reminders";

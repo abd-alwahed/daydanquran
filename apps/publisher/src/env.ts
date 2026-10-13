@@ -10,6 +10,8 @@ export interface Env {
   WEBHOOK_URL: string;
   /** "1" to publish. Anything else is the kill switch. */
   TELEGRAM_ENABLED: string;
-  /** "1" sends the post to ADMIN_CHAT_ID instead of the channel and records nothing. */
+  /** "1" sends the post to ADMIN_CHAT_ID instead of the channel and records nothing; reminders go to ADMIN_CHAT_ID only. */
   PUBLISH_DRY_RUN: string;
+  /** "1" sends personal reminders. Anything else is their kill switch. */
+  REMINDERS_ENABLED: string;
 }

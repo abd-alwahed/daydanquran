@@ -3,18 +3,26 @@ import { parseReadButton } from "./read-button";
 import { readingReply } from "./reading/messages";
 import { recordReading } from "./reading/record-reading";
 import type { ReadingStore } from "./reading/store";
+import { SETTINGS_PREFIX, reminderCommand, settingsCallback, stopCommand, type Screen } from "./reminders/settings";
+import type { ReminderStore } from "./reminders/store";
 import type { TelegramClient } from "./telegram";
 import { secretsMatch } from "./webhook-secret";
 
 /** The parts of a Telegram Update we act on. */
 export interface TelegramUpdate {
-  callback_query?: { id: string; from: { id: number }; data?: string };
+  callback_query?: {
+    id: string;
+    from: { id: number };
+    data?: string;
+    message?: { message_id: number; chat: { id: number; type: string } };
+  };
   message?: { chat: { id: number; type: string }; text?: string };
 }
 
 export interface WebhookDeps {
-  telegram: Pick<TelegramClient, "answerCallbackQuery" | "sendMessage">;
+  telegram: Pick<TelegramClient, "answerCallbackQuery" | "sendMessage" | "editMessageText">;
   store: ReadingStore;
+  reminders: ReminderStore;
   expectedSecret: string;
   now: () => Date;
 }
@@ -27,7 +35,12 @@ const WELCOME = [
   "",
   `صفحة اليوم مع التفسير والتلاوة: ${SITE_URL}`,
   "وفي القناة @daydanquran اضغط «قرأت الورد ✅» بعد قراءتك، فنحفظ لك ختمتك.",
+  "",
+  "ولتذكير يومي الساعة ٧ صباحاً: /reminder",
 ].join("\n");
+
+/** "/reminder" or "/reminder@bot_name". */
+const isCommand = (text: string | undefined, command: string) => text?.split(/[\s@]/)[0] === command;
 
 /**
  * Handles a Telegram webhook call. Always answers 200 for authentic calls, even when the update
@@ -39,20 +52,34 @@ export async function handleWebhook(request: Request, deps: WebhookDeps): Promis
   }
   const update = (await request.json()) as TelegramUpdate;
 
+  const settings = { readers: deps.store, reminders: deps.reminders, now: deps.now };
+  const show = (chatId: string, screen: Screen) => deps.telegram.sendMessage(chatId, screen.text, { buttons: screen.buttons });
+
   const query = update.callback_query;
   if (query) {
     const page = parseReadButton(query.data);
-    if (page === null) {
-      await deps.telegram.answerCallbackQuery(query.id, "");
-    } else {
+    const pressedIn = query.message;
+    if (page !== null) {
       const outcome = await recordReading(deps.store, String(query.from.id), page, deps.now());
       await deps.telegram.answerCallbackQuery(query.id, readingReply(outcome));
+    } else if (query.data?.startsWith(SETTINGS_PREFIX) && pressedIn?.chat.type === "private") {
+      const chatId = String(pressedIn.chat.id);
+      const screen = await settingsCallback(settings, String(query.from.id), query.data);
+      await deps.telegram.answerCallbackQuery(query.id, "");
+      if (screen) await deps.telegram.editMessageText(chatId, pressedIn.message_id, screen.text, { buttons: screen.buttons });
+    } else {
+      await deps.telegram.answerCallbackQuery(query.id, "");
     }
   }
 
   const message = update.message;
-  if (message?.chat.type === "private" && message.text?.startsWith("/start")) {
-    await deps.telegram.sendMessage(String(message.chat.id), WELCOME);
+  if (message?.chat.type === "private") {
+    // In a private chat the chat id is the user's id.
+    const chatId = String(message.chat.id);
+    const userId = chatId;
+    if (isCommand(message.text, "/start")) await deps.telegram.sendMessage(chatId, WELCOME);
+    else if (isCommand(message.text, "/reminder")) await show(chatId, await reminderCommand(settings, userId, chatId));
+    else if (isCommand(message.text, "/stop")) await show(chatId, await stopCommand(settings, userId));
   }
 
   return new Response("OK");

@@ -22,6 +22,13 @@ describe("recordReading", () => {
     expect(pagesInKhatma).toBe(1);
   });
 
+  it("before launch, treats page 1 as today's page (dry-run rehearsal)", async () => {
+    const store = new MemoryReadingStore();
+    await recordReading(store, "42", 1, new Date("2026-10-15T09:00:00Z"));
+    await recordReading(store, "42", 2, new Date("2026-10-15T09:00:00Z"));
+    expect([...store.dailyLog]).toEqual([["1:2026-10-15", 1]]);
+  });
+
   it("keeps each reader's progress separate", async () => {
     const store = new MemoryReadingStore();
     await recordReading(store, "1", 1, LAUNCH_NOON);
