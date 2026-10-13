@@ -10,7 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@daydan/core": "workspace:^"
+    "@daydan/core": "workspace:^",
+    "@daydan/publishers": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20260702.1",

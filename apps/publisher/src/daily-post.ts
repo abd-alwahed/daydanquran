@@ -10,7 +10,7 @@ export type PostPart =
   | { kind: "photo"; photo: string; caption?: string; buttons?: InlineButton[][] }
   | { kind: "album"; media: InputMediaPhoto[] };
 
-async function fetchOk(url: string, fetchImpl: typeof fetch): Promise<Response> {
+export async function fetchOk(url: string, fetchImpl: typeof fetch): Promise<Response> {
   const response = await fetchImpl(url);
   // A missing file means the page is not approved (not on the site). Never publish around that.
   if (!response.ok) throw new Error(`${response.status} ${url}: الصفحة غير معتمدة أو غير منشورة على الموقع`);

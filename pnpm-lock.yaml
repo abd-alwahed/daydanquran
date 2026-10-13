@@ -47,6 +47,9 @@ importers:
       '@daydan/core':
         specifier: workspace:^
         version: link:../../packages/core
+      '@daydan/publishers':
+        specifier: workspace:^
+        version: link:../../packages/publishers
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 4.20260702.1
@@ -109,6 +112,8 @@ importers:
       playwright:
         specifier: 1.56.1
         version: 1.56.1
+
+  packages/publishers: {}
 
 packages:
 

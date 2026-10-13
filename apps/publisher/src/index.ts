@@ -1,4 +1,6 @@
+import { Facebook, GraphClient, Instagram } from "@daydan/publishers";
 import type { Env } from "./env";
+import { needsAttention, publishMetaEvening, publishMetaMorning, publishMetaVideos, type ChannelResult, type MetaDeps } from "./meta/publish-meta";
 import { publishDaily } from "./publish";
 import { D1ReadingStore } from "./reading/d1-store";
 import { D1ReminderStore } from "./reminders/d1-store";
@@ -8,8 +10,17 @@ import { ALLOWED_UPDATES, handleWebhook } from "./webhook";
 import { webhookSecret } from "./webhook-secret";
 
 const WEBHOOK_PATH = "/telegram/webhook";
-/** wrangler.toml [triggers]: the daily post; every other cron is the reminder sweep. */
-const DAILY_POST_CRON = "0 4 * * *";
+/**
+ * wrangler.toml [triggers]. Each cron is its own invocation with its own subrequest budget,
+ * so Telegram, Meta images and Meta videos never share one.
+ */
+const CRONS = {
+  telegram: "0 4 * * *", // 07:00 Mecca
+  metaImages: "5 4 * * *", // 07:05
+  metaVideos: "15 4 * * *", // 07:15
+  metaEvening: "0 17 * * *", // 20:00
+  // every other cron: the reminder sweep
+} as const;
 
 // Secrets pasted into a terminal can carry a trailing newline or space, which breaks the API URL.
 const botToken = (env: Env) => env.TELEGRAM_BOT_TOKEN.trim();
@@ -70,6 +81,47 @@ async function runReminders(env: Env, now: Date): Promise<void> {
   }
 }
 
+function metaDeps(env: Env, telegram: TelegramClient): MetaDeps {
+  const token = env.META_ACCESS_TOKEN?.trim();
+  const graph = token ? new GraphClient(token) : undefined;
+  const instagramId = env.INSTAGRAM_USER_ID?.trim();
+  const pageId = env.FACEBOOK_PAGE_ID?.trim();
+  return {
+    instagram: graph && instagramId ? new Instagram(graph, instagramId) : undefined,
+    facebook: graph && pageId ? new Facebook(graph, pageId) : undefined,
+    ledger: env.PUBLICATIONS,
+    config: {
+      instagramEnabled: env.INSTAGRAM_ENABLED === "1",
+      facebookEnabled: env.FACEBOOK_ENABLED === "1",
+      videoEnabled: env.META_VIDEO_ENABLED === "1",
+      dryRun: env.PUBLISH_DRY_RUN === "1" || env.META_DRY_RUN === "1",
+    },
+    report: (text) => telegram.sendMessage(adminChatId(env), text),
+  };
+}
+
+async function runMeta(env: Env, job: (deps: MetaDeps, now: Date) => Promise<ChannelResult[]>, now: Date): Promise<void> {
+  const telegram = new TelegramClient(botToken(env));
+  const results = await job(metaDeps(env, telegram), now);
+  console.log(JSON.stringify(results));
+  for (const r of results.filter(needsAttention)) await alertAdmin(telegram, env, `نشر ${r.channel}: ${r.status}`, r.detail);
+}
+
+function runCron(cron: string, env: Env, now: Date): Promise<void> {
+  switch (cron) {
+    case CRONS.telegram:
+      return runScheduled(env, now);
+    case CRONS.metaImages:
+      return runMeta(env, publishMetaMorning, now);
+    case CRONS.metaVideos:
+      return runMeta(env, publishMetaVideos, now);
+    case CRONS.metaEvening:
+      return runMeta(env, publishMetaEvening, now);
+    default:
+      return runReminders(env, now);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -84,6 +136,6 @@ export default {
   },
   scheduled(controller, env, ctx) {
     const now = new Date(controller.scheduledTime);
-    ctx.waitUntil(controller.cron === DAILY_POST_CRON ? runScheduled(env, now) : runReminders(env, now));
+    ctx.waitUntil(runCron(controller.cron, env, now));
   },
 } satisfies ExportedHandler<Env>;

@@ -12,7 +12,8 @@ import { LAUNCH_DATE, TOTAL_JUZ, TOTAL_PAGES, todaysPage } from "@daydan/core";
 import { pageDir, readApprovedPages, readBuiltPages, readPage } from "@daydan/content";
 import { PUBLIC_PAGES_DIR, PUBLISHED_INDEX_FILE, type PublishedIndex } from "../src/lib/published-pages";
 
-const PUBLISHED_FILE = /^(mushaf|post|story|tafsir-\d+)\.png$|^cards\.json$|^caption\.txt$/;
+// ig-*.jpg: Instagram's copies (JPEG, 4:5). video.mp4/reel.mp4: Meta videos, once they are made.
+const PUBLISHED_FILE = /^(mushaf|post|story|tafsir-\d+)\.png$|^ig-(post|tafsir-\d+)\.jpg$|^(video|reel)\.mp4$|^cards\.json$|^caption\.txt$/;
 /** Warn when fewer than this many upcoming days are approved. */
 const RUNWAY_DAYS = 7;
 

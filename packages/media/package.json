@@ -9,6 +9,7 @@
   "scripts": {
     "render": "tsx src/cli/render.ts",
     "render:reminder": "tsx src/cli/render-reminder.ts",
+    "render:instagram": "tsx src/cli/render-instagram.ts",
     "typecheck": "tsc -p .",
     "lint": "eslint src",
     "test": "vitest run"

@@ -109,13 +109,57 @@ export async function renderReminderStory(browser: Browser, file: string): Promi
   }
 }
 
+/** Puts an existing PNG, unchanged, centred on a canvas of the card paper colour, and saves it as `file`. */
+async function placeImage(canvas: Canvas, size: Size, image: Size, png: string, file: string): Promise<void> {
+  const src = `data:image/png;base64,${(await fs.readFile(png)).toString("base64")}`;
+  await canvas.load(
+    `<!doctype html><html><head></head><body style="margin:0"><div dir="rtl" style="width:${size.width}px;height:${size.height}px;` +
+      `background:#F6F3EC;display:flex;align-items:center;justify-content:center">` +
+      `<img src="${src}" width="${image.width}" height="${image.height}" alt=""></div></body></html>`,
+  );
+  await canvas.screenshot(file);
+}
+
+/** The Instagram copy of a page file: Instagram publishes JPEG only. */
+export const instagramFile = (file: string) => `ig-${file.replace(/\.png$/, ".jpg")}`;
+
+/**
+ * Instagram's copies of the post and tafsir cards (`ig-post.jpg`, `ig-tafsir-NN.jpg`):
+ * - JPEG, the only image format its publishing API accepts;
+ * - all 4:5, because it crops every carousel item to the first one's shape, which would cut tafsir
+ *   text. Each square card is placed, pixel for pixel, on a 4:5 sheet of its own paper colour.
+ * Nothing is re-laid out or redrawn.
+ */
+export async function renderInstagramCards(browser: Browser, dir: string, cards: Pick<PageCards, "post" | "tafsir">): Promise<string[]> {
+  const canvas = await Canvas.open(browser, POST);
+  const files = [cards.post, ...cards.tafsir].map(instagramFile);
+  try {
+    await placeImage(canvas, POST, POST, path.join(dir, cards.post), path.join(dir, files[0]!));
+    for (const [i, file] of cards.tafsir.entries()) await placeImage(canvas, POST, SQUARE, path.join(dir, file), path.join(dir, files[i + 1]!));
+  } finally {
+    await canvas.close();
+  }
+  return files;
+}
+
+/** The reminder story as JPEG, for Instagram. */
+export async function renderReminderStoryJpeg(browser: Browser, png: string, file: string): Promise<void> {
+  const canvas = await Canvas.open(browser, STORY);
+  try {
+    await placeImage(canvas, STORY, STORY, png, file);
+  } finally {
+    await canvas.close();
+  }
+}
+
 /** Renders every generated asset of one page into `dir` and returns the manifest written to cards.json. */
 export async function renderPage(browser: Browser, data: PageData, dir: string): Promise<PageCards> {
-  for (const f of await fs.readdir(dir)) if (/^tafsir-\d+\.png$/.test(f)) await fs.rm(path.join(dir, f));
+  for (const f of await fs.readdir(dir)) if (/^tafsir-\d+\.png$|^ig-tafsir-\d+\.(png|jpg)$/.test(f)) await fs.rm(path.join(dir, f));
 
   await renderMushafTemplate(browser, data, dir, "PostDaily.html", POST, "post.png");
   await renderMushafTemplate(browser, data, dir, "StoryDaily.html", STORY, "story.png");
   const tafsir = await renderTafsirCards(browser, data, dir);
+  await renderInstagramCards(browser, dir, { post: "post.png", tafsir });
 
   const cards: PageCards = { mushaf: "mushaf.png", post: "post.png", story: "story.png", tafsir };
   await fs.writeFile(path.join(dir, "caption.txt"), caption(data));

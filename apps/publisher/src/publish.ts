@@ -1,5 +1,6 @@
-import { LAUNCH_DATE, SITE_URL, localDate, pageForDate, type IsoDate } from "@daydan/core";
+import { SITE_URL, type IsoDate } from "@daydan/core";
 import { buildDailyPost, type PostPart } from "./daily-post";
+import { publishGate } from "./publish-gate";
 import type { TelegramClient } from "./telegram";
 
 export interface PublishDeps {
@@ -46,15 +47,11 @@ function send(telegram: PublishDeps["telegram"], chatId: string, part: PostPart)
  */
 export async function publishDaily(deps: PublishDeps, now: Date): Promise<PublishResult> {
   const { config, publications, telegram, fetchImpl = fetch, sleep = wait } = deps;
-  const date = localDate(now);
-
-  const beforeLaunch = date < LAUNCH_DATE;
-  if (!config.enabled) return { status: "skipped", date, reason: "النشر موقوف (TELEGRAM_ENABLED)" };
-  // Before launch only the dry run works: it rehearses day one (page 1) with the admin.
-  if (beforeLaunch && !config.dryRun) return { status: "skipped", date, reason: "قبل يوم الإطلاق" };
+  const gate = publishGate(now, config, "TELEGRAM_ENABLED");
+  if (!gate.open) return { status: "skipped", date: gate.date, reason: gate.reason };
+  const { date, page } = gate;
   if (await publications.get(dayKey(date))) return { status: "skipped", date, reason: "نُشر من قبل" };
 
-  const page = beforeLaunch ? 1 : pageForDate(LAUNCH_DATE, now).page;
   const parts = await buildDailyPost(SITE_URL, page, fetchImpl);
   const chatId = config.dryRun ? config.adminChatId : config.channel;
   // A dry run records nothing, so it never blocks the real post.

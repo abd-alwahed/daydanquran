@@ -4,9 +4,10 @@ compatibility_date = "2026-09-01"
 # رابط عام لاستقبال ضغطات زر «قرأت» من تيليجرام (webhook). كل مسار آخر يرد 404.
 workers_dev = true
 
-# 07:00 بتوقيت مكة: المنشور اليومي. وكل ربع ساعة: التذكيرات الشخصية (كلٌّ على توقيت مدينته)
+# بتوقيت مكة: 07:00 تيليجرام، 07:05 صور إنستغرام وفيسبوك، 07:15 الفيديو والريل، 20:00 ستوري إنستغرام.
+# وكل ربع ساعة: التذكيرات الشخصية (كلٌّ على توقيت مدينته). كل موعد تشغيلٌ مستقل بحدّه من الطلبات.
 [triggers]
-crons = ["0 4 * * *", "*/15 * * * *"]
+crons = ["0 4 * * *", "5 4 * * *", "15 4 * * *", "0 17 * * *", "*/15 * * * *"]
 
 [vars]
 TELEGRAM_CHANNEL = "@daydanquran"
@@ -16,7 +17,16 @@ TELEGRAM_ENABLED = "1"
 PUBLISH_DRY_RUN = "1"
 # مفتاح إيقاف التذكيرات. مع PUBLISH_DRY_RUN = "1" لا يصل التذكير إلا إلى ADMIN_CHAT_ID
 REMINDERS_ENABLED = "1"
-# ADMIN_CHAT_ID و TELEGRAM_BOT_TOKEN أسرار: npx wrangler secret put ...
+# Meta (إنستغرام وفيسبوك): موقوف حتى موافقة Meta App Review (docs/meta-app-review.md).
+# META_DRY_RUN = "1" يبقي Meta في وضع التجربة (تقرير للمشرف فقط) حتى بعد إطفاء PUBLISH_DRY_RUN.
+INSTAGRAM_ENABLED = "0"
+FACEBOOK_ENABLED = "0"
+# الريلز وفيديو الصفحة: موقوفة حتى يُسمح بإعادة نشر التلاوة (docs/09 #2) وتُولَّد ملفات الفيديو
+META_VIDEO_ENABLED = "0"
+META_DRY_RUN = "1"
+FACEBOOK_PAGE_ID = ""
+INSTAGRAM_USER_ID = ""
+# ADMIN_CHAT_ID و TELEGRAM_BOT_TOKEN و META_ACCESS_TOKEN أسرار: npx wrangler secret put ...
 
 [[kv_namespaces]]
 binding = "PUBLICATIONS"

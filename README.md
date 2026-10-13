@@ -7,11 +7,13 @@
 ```
 apps/
   web/          موقع Next.js (تصدير ثابت) → Cloudflare Pages: daydanquran.pages.dev
-  publisher/    Cloudflare Worker: نشر صفحة اليوم على تيليجرام 07:00 بتوقيت مكة
+  publisher/    Cloudflare Worker: نشر صفحة اليوم على تيليجرام 07:00 بتوقيت مكة، وإنستغرام وفيسبوك (موقوفان حتى موافقة Meta)
 packages/
   core/         حساب صفحة اليوم، الأنواع، الثوابت، تجميع التفسير، الأرقام العربية
   content/      جلب الصفحات من المصادر والتحقق منها → content/build/pages/<n>/
-  media/        توليد الصور من القوالب بـ Playwright (المنشور، الستوري، بطاقات التفسير)
+  media/        توليد الصور من القوالب بـ Playwright (المنشور، الستوري، بطاقات التفسير، ونسخ إنستغرام JPEG)
+  publishers/   عملاء Graph API: إنستغرام (ألبوم، ستوري، ريل) وفيسبوك (صور، فيديو)، مع منع النشر المكرر
+docs/           meta-app-review.md: إعداد Meta والصلاحيات وسيناريو تسجيل الشاشة
 content/
   approved.json الصفحات التي راجعها إنسان واعتمدها (الملف الوحيد المحفوظ في git هنا)
 handoff/        حزمة المشروع الأصلية: الوثائق، الهوية، القوالب
@@ -81,6 +83,9 @@ pnpm deploy
 - `REMINDERS_ENABLED = "1"` يشغّل التذكيرات، و`"0"` يوقفها فوراً.
 - مع `PUBLISH_DRY_RUN = "1"` لا يصل التذكير إلا إلى `ADMIN_CHAT_ID`: جرّبه على نفسك.
 - القواعد في `packages/core/src/reminders.ts`: تذكير يومي وتذكير مسائي واحد (٩ م)، بعد ٧ أيام بلا قراءة يصبح أسبوعياً، وبعد ٣٠ يوماً يتوقف، إلا رسالة واحدة في أول رمضان لمن أبقاها مفعّلة.
+
+### ٧. إنستغرام وفيسبوك
+كل الخطوات في [`docs/meta-app-review.md`](docs/meta-app-review.md). باختصار: `INSTAGRAM_ENABLED` و`FACEBOOK_ENABLED` و`META_VIDEO_ENABLED` مفاتيح إيقاف لكل قناة، و`META_DRY_RUN = "1"` يرسل تقريراً للمدير بما كان سيُنشر دون أي اتصال بـMeta.
 
 ## يوم الإطلاق
 `LAUNCH_DATE` في `packages/core/src/constants.ts`. يوم الإطلاق هو الصفحة ١، ولا يُغيَّر بعد الإطلاق.
