@@ -11,7 +11,7 @@ The owner wants to launch on **2026-10-23** (page 1). The repo follows the monor
 - `packages/media`: Playwright renders `post.png` (1080×1350, `templates/PostDaily.html`), `story.png` (1080×1920, `templates/StoryDaily.html`), `tafsir-NN.png` (36px), `caption.txt`, `cards.json`. Fonts come only from `handoff/brand/fonts` (inlined; Google Fonts links are stripped), and every screenshot fails if any glyph is drawn in a fallback font (CDP `CSS.getPlatformFontsForNode`, port of `fontcheck.py`).
 - `apps/web`: Next.js static export on Cloudflare Pages. `scripts/sync-content.ts` is the single approval gate: only pages in `content/approved.json` are built. Reading progress goes through `ReadingRepository` (localStorage today, Supabase later).
 - `apps/publisher`: Cloudflare Worker cron, posts the daily album to Telegram from the site's files (KV idempotency, dry-run, kill switch, admin alert).
-- Instagram/Facebook/WhatsApp: manual posting of the generated images until Meta approval. Recitation is streamed from the Quran.com CDN, not re-uploaded (license pending).
+- Instagram/Facebook are marketing channels only (owner, 2026-10-13): the daily page and tafsir are not posted there; the only planned automation is a story of the day's page. WhatsApp: manual posting of the generated images. Recitation is streamed from the Quran.com CDN, not re-uploaded (license pending).
 - Deferred: Supabase/accounts, admin panel, smart reminders, reels/video, Meta automation.
 - Mushaf images come from files.quran.app (Madinah Mushaf, KFGQPC edition) because dm.qurancomplex.gov.sa is unreachable from the owner's network.
 
