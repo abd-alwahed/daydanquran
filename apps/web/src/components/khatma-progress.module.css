@@ -1,0 +1,61 @@
+.progress {
+  flex-basis: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.juz {
+  display: flex;
+  gap: 3px;
+  height: 32px;
+}
+.juz > span {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 4px;
+  background: var(--dd-primary-100);
+  overflow: hidden;
+}
+.juz > span > span {
+  display: block;
+  width: 100%;
+  background: var(--dd-primary);
+}
+.juz > .today {
+  background: var(--dd-gold);
+}
+.caption {
+  margin: 0;
+  color: var(--dd-muted);
+  font-size: 13px;
+}
+.week {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.week li {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+.week li::before {
+  content: "";
+  height: 8px;
+  border-radius: 8px;
+  background: var(--dd-primary-100);
+}
+.week .read::before {
+  background: var(--dd-primary);
+}
+.week .today::before {
+  background: var(--dd-gold);
+}
+.day {
+  color: var(--dd-muted);
+  font-size: 13px;
+}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { SITE_URL } from "@daydan/core";
+import { ServiceWorker } from "@/components/service-worker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { display, reading, ui } from "./fonts";
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <SiteHeader />
         <main className="container">{children}</main>
         <SiteFooter />
+        <ServiceWorker />
       </body>
     </html>
   );

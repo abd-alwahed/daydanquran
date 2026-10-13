@@ -4,3 +4,4 @@ export * from "./schedule";
 export * from "./arabic";
 export * from "./tafsir";
 export * from "./page-labels";
+export * from "./progress";

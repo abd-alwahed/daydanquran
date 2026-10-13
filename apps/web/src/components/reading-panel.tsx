@@ -1,19 +1,23 @@
 "use client";
 
-import { TOTAL_PAGES, toArabicDigits } from "@daydan/core";
+import { consecutiveDays, toArabicDigits } from "@daydan/core";
 import { useReading } from "@/lib/reading";
 import { useToday } from "@/lib/use-today";
 import buttons from "./button.module.css";
+import { KhatmaProgress } from "./khatma-progress";
 import styles from "./reading-panel.module.css";
 
-/** "قرأت" button, thanks message and personal khatma progress. No streaks, no scores. */
-export function ReadingPanel({ page }: { page: number }) {
+/** "قرأت" button, thanks message and personal khatma progress. No scores, nothing counted as missed. */
+export function ReadingPanel({ page, juzStarts }: { page: number; juzStarts: readonly number[] }) {
   const today = useToday();
-  const { pagesRead, markRead } = useReading();
+  const { pagesRead, log, markRead } = useReading();
   const isTodaysPage = today?.scheduled?.page === page;
   const isRead = pagesRead.has(page);
 
   const label = isRead ? "قرأتها، الحمد لله" : isTodaysPage ? "قرأت وِرد اليوم" : "قرأت هذه الصفحة";
+  const days = today && isTodaysPage ? consecutiveDays(log, today.localDate) : 0;
+  // Message library (docs/06-brand.md): "after reading, inside the app".
+  const thanks = !isRead ? "" : days > 1 ? `تقبّل الله. هذا يومك ${toArabicDigits(days)} على التوالي.` : "تقبّل الله.";
 
   return (
     <div className={styles.panel}>
@@ -26,24 +30,16 @@ export function ReadingPanel({ page }: { page: number }) {
         {label}
       </button>
       <p className={styles.thanks} role="status">
-        {isRead ? "تقبّل الله." : ""}
+        {thanks}
       </p>
-      {pagesRead.size > 0 && (
-        <div className={styles.progress}>
-          <div
-            className={styles.bar}
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={TOTAL_PAGES}
-            aria-valuenow={pagesRead.size}
-            aria-label="تقدّم ختمتك"
-          >
-            <span style={{ width: `${(pagesRead.size / TOTAL_PAGES) * 100}%` }} />
-          </div>
-          <p>
-            ختمتك: {toArabicDigits(pagesRead.size)} من {toArabicDigits(TOTAL_PAGES)} صفحة
-          </p>
-        </div>
+      {today?.scheduled && (
+        <KhatmaProgress
+          pagesRead={pagesRead}
+          log={log}
+          localDate={today.localDate}
+          todaysPage={today.scheduled.page}
+          juzStarts={juzStarts}
+        />
       )}
     </div>
   );
