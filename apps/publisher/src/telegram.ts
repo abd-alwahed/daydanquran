@@ -67,6 +67,18 @@ export class TelegramClient {
     return this.call("sendMediaGroup", { chat_id: chatId, media });
   }
 
+  /**
+   * Sends a file as a document, so Telegram keeps it at full size (a photo would be shrunk).
+   * Uploaded, because Telegram fetches documents by URL only for GIF, PDF and ZIP.
+   */
+  sendDocument(chatId: string, file: Blob, fileName: string, options: { caption?: string } = {}): Promise<unknown> {
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("document", file, fileName);
+    if (options.caption) form.append("caption", options.caption);
+    return this.call("sendDocument", form);
+  }
+
   sendMessage(chatId: string, text: string, options: { buttons?: InlineButton[][] } = {}): Promise<unknown> {
     return this.call("sendMessage", { chat_id: chatId, text, reply_markup: keyboard(options.buttons) });
   }
@@ -90,11 +102,13 @@ export class TelegramClient {
   }
 
   private async call<T>(method: string, body: object): Promise<T> {
-    const response = await this.fetchImpl(`https://api.telegram.org/bot${this.token}/${method}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const response = await this.fetchImpl(
+      `https://api.telegram.org/bot${this.token}/${method}`,
+      // FormData sets its own multipart content type.
+      body instanceof FormData
+        ? { method: "POST", body }
+        : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) },
+    );
     const json = (await response.json()) as TelegramResponse<T>;
     // The Bot API answers 404 for every method when the token itself is wrong or revoked.
     if (response.status === 404) throw new Error(`Telegram ${method}: توكن البوت غير صالح أو أُلغي (404)`);

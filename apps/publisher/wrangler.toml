@@ -16,7 +16,10 @@ TELEGRAM_ENABLED = "1"
 PUBLISH_DRY_RUN = "1"
 # مفتاح إيقاف التذكيرات. مع PUBLISH_DRY_RUN = "1" لا يصل التذكير إلا إلى ADMIN_CHAT_ID
 REMINDERS_ENABLED = "1"
-# ستوري إنستغرام (صفحة اليوم): موقوف حتى يُضبط الحساب (docs/instagram-story.md).
+# 07:01: صورة ستوري اليوم تصل ADMIN_CHAT_ID على تيليجرام لتنشرها يدوياً على إنستغرام وفيسبوك.
+# قبل الإطلاق تصل الصفحة ١ كل يوم بعلامة «تجربة».
+STORY_KIT_ENABLED = "1"
+# ستوري إنستغرام الآلي (صفحة اليوم): موقوف، فمنصة مطوّري Meta مغلقة أمام حسابنا (docs/instagram-story.md).
 # INSTAGRAM_DRY_RUN = "1" يرسل للمشرف فقط ما كان سيُنشر، حتى بعد إطفاء PUBLISH_DRY_RUN.
 INSTAGRAM_ENABLED = "0"
 INSTAGRAM_DRY_RUN = "1"

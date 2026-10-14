@@ -1,6 +1,7 @@
 import type { Env } from "./env";
 import { Instagram } from "./instagram/instagram";
 import { publishStory } from "./instagram/story";
+import { sendStoryKit } from "./instagram/story-kit";
 import { instagramToken } from "./instagram/token";
 import { publishDaily } from "./publish";
 import { D1ReadingStore } from "./reading/d1-store";
@@ -12,8 +13,9 @@ import { webhookSecret } from "./webhook-secret";
 
 const WEBHOOK_PATH = "/telegram/webhook";
 /**
- * wrangler.toml [triggers]: the daily Telegram post (07:00 Mecca), the Instagram story (07:01, its own
- * invocation so neither can hold the other back); every other cron is the reminder sweep.
+ * wrangler.toml [triggers]: the daily Telegram post (07:00 Mecca), the story image for the admin and the
+ * Instagram story (07:01, its own invocation so neither can hold the Telegram post back); every other
+ * cron is the reminder sweep.
  */
 const DAILY_POST_CRON = "0 4 * * *";
 const INSTAGRAM_STORY_CRON = "1 4 * * *";
@@ -103,9 +105,24 @@ async function runInstagramStory(env: Env, now: Date): Promise<void> {
   }
 }
 
+async function runStoryKit(env: Env, now: Date): Promise<void> {
+  const telegram = new TelegramClient(botToken(env));
+  try {
+    const result = await sendStoryKit(
+      { telegram, ledger: env.PUBLICATIONS, config: { enabled: env.STORY_KIT_ENABLED === "1", adminChatId: adminChatId(env) } },
+      now,
+    );
+    console.log(JSON.stringify(result));
+  } catch (error) {
+    await alertAdmin(telegram, env, "تعذّر إرسال صورة ستوري اليوم", error);
+    throw error;
+  }
+}
+
 function runCron(cron: string, env: Env, now: Date): Promise<void> {
   if (cron === DAILY_POST_CRON) return runScheduled(env, now);
-  if (cron === INSTAGRAM_STORY_CRON) return runInstagramStory(env, now);
+  // Independent jobs: one failing never stops the other.
+  if (cron === INSTAGRAM_STORY_CRON) return Promise.allSettled([runStoryKit(env, now), runInstagramStory(env, now)]).then(() => {});
   return runReminders(env, now);
 }
 

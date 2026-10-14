@@ -24,6 +24,20 @@ describe("TelegramClient", () => {
     ]);
   });
 
+  it("uploads a document as multipart form data, without a JSON content type", async () => {
+    let seen: RequestInit | undefined;
+    const capture = (async (_url: string, init?: RequestInit) => {
+      seen = init;
+      return Response.json({ ok: true, result: {} });
+    }) as unknown as typeof fetch;
+    await new TelegramClient(TOKEN, capture).sendDocument("admin", new Blob([new Uint8Array(3)]), "a.jpg", { caption: "ستوري" });
+    const form = seen?.body as FormData;
+    expect(new Headers(seen?.headers).get("content-type")).toBeNull();
+    expect(form.get("chat_id")).toBe("admin");
+    expect(form.get("caption")).toBe("ستوري");
+    expect((form.get("document") as unknown as File).name).toBe("a.jpg");
+  });
+
   it("surfaces Telegram's error description", async () => {
     const failing = (async () => Response.json({ ok: false, description: "chat not found" })) as unknown as typeof fetch;
     await expect(new TelegramClient(TOKEN, failing).sendMessage("x", "y")).rejects.toThrow("chat not found");
