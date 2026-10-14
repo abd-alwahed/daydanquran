@@ -1,0 +1,17 @@
+.share {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 360px;
+  margin-block: 8px 24px;
+}
+.status {
+  min-height: 1.6em;
+  margin: 6px 0 0;
+  color: var(--dd-muted);
+  font-size: 14px;
+}
+/* The shared button grows along its row (flex: 1 1 180px); in this column that would be its height. */
+.share > button {
+  flex: none;
+}

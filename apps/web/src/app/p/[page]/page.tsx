@@ -7,6 +7,7 @@ import { PageHeading } from "@/components/page-heading";
 import { PagePager } from "@/components/page-pager";
 import { ReadingPanel } from "@/components/reading-panel";
 import { RecitationPlayer } from "@/components/recitation-player";
+import { StoryShare } from "@/components/story-share";
 import { TafsirSection } from "@/components/tafsir-section";
 import { readPublishedIndex, readPublishedPages } from "@/lib/published-pages";
 
@@ -47,6 +48,7 @@ export default async function MushafPage({ params }: Props) {
         <ReadingPanel page={data.page} juzStarts={juzStarts} />
       </div>
       <p className={actions.reciter}>التلاوة: الشيخ محمود خليل الحصري (مرتّل)</p>
+      <StoryShare page={data.page} />
       <TafsirSection data={data} />
       <PagePager page={data.page} available={available} />
     </article>
