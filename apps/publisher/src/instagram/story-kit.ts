@@ -2,7 +2,7 @@ import { LAUNCH_DATE, SITE_URL, toArabicDigits, type IsoDate } from "@daydan/cor
 import { publishGate } from "../publish-gate";
 import type { TelegramClient } from "../telegram";
 import type { Ledger } from "./instagram";
-import { STORY_FILE } from "./story";
+import { assertStoryShape, jpegDimensions, STORY_FILE } from "./story";
 
 export interface StoryKitDeps {
   telegram: Pick<TelegramClient, "sendDocument">;
@@ -39,6 +39,8 @@ export async function sendStoryKit(deps: StoryKitDeps, now: Date): Promise<Story
   // A missing file means the page is not approved (not on the site). Never send around that.
   if (!response.ok) throw new Error(`${response.status} ${url}: الصفحة غير معتمدة أو غير منشورة على الموقع`);
   const image = await response.blob();
+  // The same check as the Instagram story: the admin must never get a broken or cropped image to share.
+  assertStoryShape(jpegDimensions(new Uint8Array(await image.arrayBuffer()), url), url);
 
   const caption = [
     ...(rehearsal ? ["🧪 تجربة قبل الإطلاق، لا تنشرها"] : []),

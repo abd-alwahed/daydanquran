@@ -33,7 +33,8 @@ export function StoryShare({ page }: { page: number }) {
       const url = URL.createObjectURL(file);
       const link = Object.assign(document.createElement("a"), { href: url, download: file.name });
       link.click();
-      URL.revokeObjectURL(url);
+      // Revoked later: some browsers cancel a download whose URL is revoked at once.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
       setStatus("حُفظت الصورة، انشرها من هاتفك في الستوري.");
     } catch (error) {
       // Closing the share sheet is not an error.

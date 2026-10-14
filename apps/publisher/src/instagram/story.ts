@@ -24,11 +24,8 @@ export type StoryResult =
   | { status: "published" | "already" | "dry-run"; date: IsoDate; page: number }
   | { status: "skipped"; date: IsoDate; reason: string };
 
-/** Reads a JPEG's pixel size from its first bytes (SOF segment), without downloading the whole file. */
-export async function jpegSize(url: string, fetchImpl: typeof fetch = fetch): Promise<{ width: number; height: number }> {
-  const response = await fetchImpl(url, { headers: { range: "bytes=0-4095" } });
-  if (!response.ok) throw new Error(`${response.status} ${url}: الصفحة غير معتمدة أو غير منشورة على الموقع`);
-  const bytes = new Uint8Array(await response.arrayBuffer());
+/** A JPEG's pixel size, read from its start-of-frame segment; throws if `bytes` is not a JPEG. */
+export function jpegDimensions(bytes: Uint8Array, name: string): { width: number; height: number } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (bytes[0] === 0xff && bytes[1] === 0xd8) {
     // Walk the segments to the first start-of-frame (SOF0–SOF15, except DHT, JPG and DAC).
@@ -39,7 +36,19 @@ export async function jpegSize(url: string, fetchImpl: typeof fetch = fetch): Pr
       }
     }
   }
-  throw new Error(`${url}: ليست صورة JPEG`);
+  throw new Error(`${name}: ليست صورة JPEG`);
+}
+
+/** Stories are 9:16: any other shape would be cropped, cutting into the Mushaf page. */
+export function assertStoryShape({ width, height }: { width: number; height: number }, name: string): void {
+  if (width * 16 !== height * 9) throw new Error(`${name}: ${width}×${height}، والستوري يجب أن يكون ٩:١٦`);
+}
+
+/** Reads a JPEG's pixel size from its first bytes, without downloading the whole file. */
+export async function jpegSize(url: string, fetchImpl: typeof fetch = fetch): Promise<{ width: number; height: number }> {
+  const response = await fetchImpl(url, { headers: { range: "bytes=0-4095" } });
+  if (!response.ok) throw new Error(`${response.status} ${url}: الصفحة غير معتمدة أو غير منشورة على الموقع`);
+  return jpegDimensions(new Uint8Array(await response.arrayBuffer()), url);
 }
 
 /** 07:01 Mecca: today's page as an Instagram story, at most once per day. */
@@ -52,9 +61,7 @@ export async function publishStory(deps: StoryDeps, now: Date): Promise<StoryRes
   if (await ledger.get(key)) return { status: "already", date, page };
 
   const url = `${SITE_URL}/p/${page}/${STORY_FILE}`;
-  const { width, height } = await jpegSize(url, deps.fetchImpl);
-  // Instagram would crop any other shape, cutting into the Mushaf page.
-  if (width * 16 !== height * 9) throw new Error(`${url}: ${width}×${height}، والستوري يجب أن يكون ٩:١٦`);
+  assertStoryShape(await jpegSize(url, deps.fetchImpl), url);
 
   if (config.dryRun) {
     await deps.report(`🧪 ستوري إنستغرام (تجربة): الصفحة ${page}\n${url}`);

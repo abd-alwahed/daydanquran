@@ -44,3 +44,12 @@ export function fakeInstagramApi(options: { remaining?: number; statuses?: Conta
   const publishes = () => calls.filter((c) => c.path.endsWith("/media_publish")).length;
   return { fetchImpl, calls, containers, publishes };
 }
+
+/** SOI, a JFIF APP0 segment, a DQT segment, then SOF0 with the size. */
+export const jpeg = (width: number, height: number) =>
+  new Uint8Array([
+    0xff, 0xd8,
+    0xff, 0xe0, 0x00, 0x10, ...Array<number>(14).fill(0),
+    0xff, 0xdb, 0x00, 0x04, 0x00, 0x01,
+    0xff, 0xc0, 0x00, 0x11, 0x08, height >> 8, height & 0xff, width >> 8, width & 0xff, ...Array<number>(12).fill(0),
+  ]);
