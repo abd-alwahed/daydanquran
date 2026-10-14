@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SOURCES } from "@/lib/sources";
 import styles from "./site-footer.module.css";
 
@@ -11,7 +12,7 @@ export function SiteFooter() {
             {source.label}: {"href" in source ? <a href={source.href}>{source.value}</a> : source.value}
           </span>
         ))}
-        {" · "}دَيْدَن مشروع غير ربحي.
+        {" · "}دَيْدَن مشروع غير ربحي · <Link href="/privacy/">سياسة الخصوصية</Link>
       </p>
     </footer>
   );
