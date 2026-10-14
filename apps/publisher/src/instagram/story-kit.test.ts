@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { LAUNCH_DATE, SITE_URL } from "@daydan/core";
-import { memoryLedger } from "./fakes";
+import { jpeg, memoryLedger } from "./fakes";
 import { sendStoryKit, type StoryKitDeps } from "./story-kit";
 
 const DAY = 24 * 3_600_000;
@@ -18,6 +18,7 @@ describe("sendStoryKit", () => {
   let failures: number;
   let ledger: ReturnType<typeof memoryLedger>;
   let approved: number[];
+  let image: Uint8Array;
 
   const deps = (enabled = true): StoryKitDeps => ({
     telegram: {
@@ -30,7 +31,7 @@ describe("sendStoryKit", () => {
     config: { enabled, adminChatId: "admin" },
     fetchImpl: (async (url: string) => {
       const match = url.match(/\/p\/(\d+)\/ig-story\.jpg$/);
-      return match && approved.includes(Number(match[1])) ? new Response(new Uint8Array(1234)) : new Response("", { status: 404 });
+      return match && approved.includes(Number(match[1])) ? new Response(image) : new Response("", { status: 404 });
     }) as typeof fetch,
     sleep: async () => {},
   });
@@ -40,6 +41,7 @@ describe("sendStoryKit", () => {
     failures = 0;
     ledger = memoryLedger();
     approved = [1, 2];
+    image = jpeg(1080, 1920);
   });
 
   it("sends today's story image, full size, to the admin with the page link", async () => {
@@ -48,7 +50,7 @@ describe("sendStoryKit", () => {
       {
         chatId: "admin",
         fileName: "daydan-1.jpg",
-        bytes: 1234,
+        bytes: image.length,
         caption: `ستوري اليوم: الصفحة ١\nانشرها على إنستغرام وفيسبوك، وأضف ملصق الرابط:\n${SITE_URL}/p/1/`,
       },
     ]);
@@ -81,6 +83,14 @@ describe("sendStoryKit", () => {
   it("refuses an unapproved page", async () => {
     approved = [];
     await expect(sendStoryKit(deps(), LAUNCH_MORNING)).rejects.toThrow("غير معتمدة");
+    expect(sent).toHaveLength(0);
+  });
+
+  it("refuses a file that is not a 9:16 JPEG", async () => {
+    image = jpeg(1080, 1350);
+    await expect(sendStoryKit(deps(), LAUNCH_MORNING)).rejects.toThrow("٩:١٦");
+    image = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+    await expect(sendStoryKit(deps(), LAUNCH_MORNING)).rejects.toThrow("ليست صورة JPEG");
     expect(sent).toHaveLength(0);
   });
 

@@ -1,20 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { LAUNCH_DATE, SITE_URL } from "@daydan/core";
 import { Instagram } from "./instagram";
-import { fakeInstagramApi, memoryLedger } from "./fakes";
+import { fakeInstagramApi, jpeg, memoryLedger } from "./fakes";
 import { jpegSize, publishStory, type StoryDeps } from "./story";
 
 const DAY = 24 * 3_600_000;
 const LAUNCH_MORNING = new Date(`${LAUNCH_DATE}T04:01:00Z`);
-
-/** SOI, a JFIF APP0 segment, a DQT segment, then SOF0 with the size. */
-const jpeg = (width: number, height: number) =>
-  new Uint8Array([
-    0xff, 0xd8,
-    0xff, 0xe0, 0x00, 0x10, ...Array<number>(14).fill(0),
-    0xff, 0xdb, 0x00, 0x04, 0x00, 0x01,
-    0xff, 0xc0, 0x00, 0x11, 0x08, height >> 8, height & 0xff, width >> 8, width & 0xff, ...Array<number>(12).fill(0),
-  ]);
 
 /** The site: only `approved` pages have their files. */
 function fakeSite(approved: number[], size = { width: 1080, height: 1920 }) {
