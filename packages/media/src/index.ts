@@ -1,4 +1,4 @@
 export { caption } from "./caption";
 export { packTafsirCards, type Card, type CardPiece, type FitsOnCard } from "./tafsir-cards";
-export { renderPage, renderReminderStory, MAX_TAFSIR_CARDS } from "./render-page";
+export { renderPage, renderInstagramStory, renderReminderStory, INSTAGRAM_STORY, MAX_TAFSIR_CARDS } from "./render-page";
 export { launchBrowser } from "./browser";

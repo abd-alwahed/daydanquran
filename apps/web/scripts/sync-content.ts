@@ -12,7 +12,8 @@ import { LAUNCH_DATE, TOTAL_JUZ, TOTAL_PAGES, todaysPage } from "@daydan/core";
 import { pageDir, readApprovedPages, readBuiltPages, readPage } from "@daydan/content";
 import { PUBLIC_PAGES_DIR, PUBLISHED_INDEX_FILE, type PublishedIndex } from "../src/lib/published-pages";
 
-const PUBLISHED_FILE = /^(mushaf|post|story|tafsir-\d+)\.png$|^cards\.json$|^caption\.txt$/;
+// ig-story.jpg: the story as JPEG, for the publisher's Instagram story.
+const PUBLISHED_FILE = /^(mushaf|post|story|tafsir-\d+)\.png$|^ig-story\.jpg$|^cards\.json$|^caption\.txt$/;
 /** Warn when fewer than this many upcoming days are approved. */
 const RUNWAY_DAYS = 7;
 

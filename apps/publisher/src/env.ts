@@ -14,4 +14,12 @@ export interface Env {
   PUBLISH_DRY_RUN: string;
   /** "1" sends personal reminders. Anything else is their kill switch. */
   REMINDERS_ENABLED: string;
+  /** "1" posts today's page as an Instagram story at 07:01 Mecca. Anything else is its kill switch. */
+  INSTAGRAM_ENABLED: string;
+  /** "1" keeps the story in dry-run mode (report to ADMIN_CHAT_ID, no Instagram call) even after PUBLISH_DRY_RUN is off. */
+  INSTAGRAM_DRY_RUN: string;
+  /** The Instagram professional account's id (not its @username). */
+  INSTAGRAM_USER_ID: string;
+  /** First long-lived Instagram User token (secret). Refreshed copies live in PUBLICATIONS KV. */
+  INSTAGRAM_ACCESS_TOKEN?: string;
 }
