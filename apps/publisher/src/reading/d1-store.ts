@@ -51,6 +51,14 @@ export class D1ReadingStore implements ReadingStore {
     await this.db.prepare("UPDATE users SET current_khatma = current_khatma + 1 WHERE id = ?").bind(readerId).run();
   }
 
+  async khatmaPages(readerId: number, khatma: number): Promise<number[]> {
+    const { results } = await this.db
+      .prepare("SELECT page FROM pages_read WHERE user_id = ? AND khatma = ?")
+      .bind(readerId, khatma)
+      .all<{ page: number }>();
+    return results.map((row) => row.page);
+  }
+
   private findReader(provider: string, providerUserId: string): Promise<Reader | null> {
     return this.db
       .prepare(

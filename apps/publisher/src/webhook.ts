@@ -1,4 +1,5 @@
 import { SITE_URL } from "@daydan/core";
+import { ABOUT, khatmaCommand, makeupCommand, readCommand, todayCommand, type Reply } from "./commands";
 import { parseReadButton } from "./read-button";
 import { readingReply } from "./reading/messages";
 import { recordReading } from "./reading/record-reading";
@@ -25,6 +26,8 @@ export interface WebhookDeps {
   reminders: ReminderStore;
   expectedSecret: string;
   now: () => Date;
+  /** Reads the day's caption from the site for /today. Defaults to the global fetch. */
+  fetchImpl?: typeof fetch;
 }
 
 export const ALLOWED_UPDATES = ["callback_query", "message"];
@@ -34,9 +37,15 @@ const WELCOME = [
   "صفحة من القرآن كل يوم، حتى يصير القرآن دَيْدَنك.",
   "",
   `صفحة اليوم مع التفسير والتلاوة: ${SITE_URL}`,
-  "وفي القناة @daydanquran اضغط «قرأت الورد ✅» بعد قراءتك، فنحفظ لك ختمتك.",
+  "وبعد قراءتك اضغط «قرأت الورد ✅» هنا أو في القناة @daydanquran، فنحفظ لك ختمتك.",
   "",
-  "ولتذكير يومي الساعة ٧ صباحاً: /reminder",
+  // Arabic first on each line, so Telegram lays the line out right to left.
+  "صفحة اليوم: /today",
+  "قرأت وِرد اليوم: /read",
+  "ختمتي: /khatma",
+  "اقضِ ما فاتك: /makeup",
+  "تذكير يومي الساعة ٧ صباحاً: /reminder",
+  "عن دَيْدَن: /about",
 ].join("\n");
 
 /** "/reminder" or "/reminder@bot_name". */
@@ -53,7 +62,7 @@ export async function handleWebhook(request: Request, deps: WebhookDeps): Promis
   const update = (await request.json()) as TelegramUpdate;
 
   const settings = { readers: deps.store, reminders: deps.reminders, now: deps.now };
-  const show = (chatId: string, screen: Screen) => deps.telegram.sendMessage(chatId, screen.text, { buttons: screen.buttons });
+  const show = (chatId: string, reply: Screen | Reply) => deps.telegram.sendMessage(chatId, reply.text, { buttons: reply.buttons });
 
   const query = update.callback_query;
   if (query) {
@@ -77,7 +86,13 @@ export async function handleWebhook(request: Request, deps: WebhookDeps): Promis
     // In a private chat the chat id is the user's id.
     const chatId = String(message.chat.id);
     const userId = chatId;
+    const now = deps.now();
     if (isCommand(message.text, "/start")) await deps.telegram.sendMessage(chatId, WELCOME);
+    else if (isCommand(message.text, "/today")) await show(chatId, await todayCommand(now, deps.fetchImpl));
+    else if (isCommand(message.text, "/read")) await show(chatId, await readCommand(deps.store, userId, now));
+    else if (isCommand(message.text, "/khatma")) await show(chatId, await khatmaCommand(deps.store, userId));
+    else if (isCommand(message.text, "/makeup")) await show(chatId, await makeupCommand(deps.store, userId, now));
+    else if (isCommand(message.text, "/about")) await deps.telegram.sendMessage(chatId, ABOUT);
     else if (isCommand(message.text, "/reminder")) await show(chatId, await reminderCommand(settings, userId, chatId));
     else if (isCommand(message.text, "/stop")) await show(chatId, await stopCommand(settings, userId));
   }

@@ -15,4 +15,6 @@ export interface ReadingStore {
   /** Adds the page to the khatma (no-op if already there) and returns how many pages it now has. */
   addPageToKhatma(readerId: number, khatma: number, page: number): Promise<number>;
   startNextKhatma(readerId: number): Promise<void>;
+  /** The pages read so far in a khatma. */
+  khatmaPages(readerId: number, khatma: number): Promise<number[]>;
 }

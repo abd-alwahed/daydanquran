@@ -36,4 +36,8 @@ export class MemoryReadingStore implements ReadingStore {
   async startNextKhatma(readerId: number): Promise<void> {
     this.readers[readerId - 1]!.currentKhatma += 1;
   }
+
+  async khatmaPages(readerId: number, khatma: number): Promise<number[]> {
+    return [...(this.pages.get(`${readerId}:${khatma}`) ?? [])];
+  }
 }

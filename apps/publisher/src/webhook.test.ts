@@ -75,6 +75,15 @@ describe("handleWebhook", () => {
     await handleWebhook(call({ message: { chat: { id: -9, type: "group" }, text: "/start" } }), deps);
     expect(messages.map((m) => m.chatId)).toEqual(["5"]);
   });
+
+  it("answers every command in the bot's menu", async () => {
+    deps.fetchImpl = async () => new Response("سورة الفاتحة · الجزء ١");
+    for (const text of ["/today", "/read", "/khatma", "/makeup", "/about", "/khatma@Daydanquran_bot"]) {
+      await handleWebhook(call({ message: { chat: { id: 5, type: "private" }, text } }), deps);
+    }
+    expect(messages).toHaveLength(6);
+    expect(messages[2]?.text).toBe("ختمتك: ١ من ٦٠٤ صفحة.");
+  });
 });
 
 describe("reminder settings in the bot", () => {
