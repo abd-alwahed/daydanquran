@@ -3,6 +3,7 @@ import { SCHEDULED_MAX, bufferPosts, meccaDate, meccaToUtc, planActions, sameTex
 import { PLAN } from "./plan";
 
 const posts = bufferPosts(PLAN, "https://site/marketing");
+const feed = posts.filter((p) => p.type === "post");
 const before = new Date("2026-10-16T00:00:00Z");
 
 describe("Buffer posts from the plan", () => {
@@ -12,7 +13,7 @@ describe("Buffer posts from the plan", () => {
   });
 
   it("takes only feed posts, never stories", () => {
-    for (const p of posts) for (const url of p.images) expect(url).not.toMatch(/story|countdown/);
+    for (const p of feed) for (const url of p.images) expect(url).not.toMatch(/story|countdown/);
     expect(posts.find((p) => p.date === "2026-10-21")!.images).toHaveLength(6);
   });
 
@@ -22,12 +23,19 @@ describe("Buffer posts from the plan", () => {
     );
   });
 
-  it("marks the quotes for review", () => {
-    expect(posts.filter((p) => p.needsReview).map((p) => p.date)).toEqual([
-      "2026-10-19",
-      "2026-10-28",
-      "2026-11-11",
-      "2026-11-18",
+  it("adds each story on its own, at its time, with no text", () => {
+    const stories = posts.filter((p) => p.type === "story");
+    const friday = stories.find((p) => p.date === "2026-11-06")!;
+    expect(friday).toMatchObject({
+      text: "",
+      images: ["https://site/marketing/2026-11-06/friday-story.png"],
+    });
+    expect(friday.dueAt).toBe("2026-11-06T09:00:00.000Z");
+    expect(stories.find((p) => p.date === "2026-10-24")!.dueAt).toBe("2026-10-24T17:30:00.000Z");
+    expect(stories.filter((p) => p.date === "2026-10-23").map((p) => p.images[0]!.split("/").pop())).toEqual([
+      "launch-story.png",
+      "friday-story.png",
+      "reminder-story.png",
     ]);
   });
 });
@@ -39,23 +47,30 @@ describe("what to do on a channel", () => {
     expect(actions.filter((a) => a.action === "draft")).toHaveLength(posts.length - SCHEDULED_MAX);
   });
 
-  it("only drafts the quotes, even with room left", () => {
-    const actions = planActions(posts, [], before);
-    for (const a of actions) if (a.post.needsReview) expect(a.action).toBe("draft");
+  it("counts a date's stories already in Buffer, since stories have no text to match", () => {
+    const oct23 = posts.filter((p) => p.date === "2026-10-23");
+    const existing = [{ text: "", status: "scheduled", type: "story", dueAt: "2026-10-23T16:15:00Z" }];
+    const actions = planActions(oct23, existing, before);
+    expect(actions.map((a) => [a.post.type, a.action])).toEqual([
+      ["post", "schedule"],
+      ["story", "skip-exists"],
+      ["story", "schedule"],
+      ["story", "schedule"],
+    ]);
   });
 
   it("skips what Buffer already has and counts its scheduled posts", () => {
     const existing = [
-      { text: `  ${posts[0]!.text.replace(/\n/g, "\n\n")} `, status: "scheduled" },
-      { text: posts[1]!.text, status: "draft" },
+      { text: `  ${feed[0]!.text.replace(/\n/g, "\n\n")} `, status: "scheduled" },
+      { text: feed[1]!.text, status: "draft" },
     ];
-    const actions = planActions(posts, existing, before);
+    const actions = planActions(feed, existing, before);
     expect(actions.slice(0, 2).map((a) => a.action)).toEqual(["skip-exists", "skip-exists"]);
     expect(actions.filter((a) => a.action === "schedule")).toHaveLength(SCHEDULED_MAX - 1);
   });
 
   it("tells the Friday posts apart by date, since they share a caption", () => {
-    const fridays = posts.filter((p) => p.title.startsWith("جمعة"));
+    const fridays = posts.filter((p) => p.type === "post" && p.title.startsWith("جمعة"));
     const existing = [{ text: fridays[0]!.text, status: "draft", dueAt: "2026-10-30T11:00:00Z" }];
     const actions = planActions(fridays, existing, before);
     expect(actions.map((a) => a.action)).toEqual(["skip-exists", "schedule", "schedule", "schedule"]);

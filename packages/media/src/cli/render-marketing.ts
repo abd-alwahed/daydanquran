@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { Canvas, launchBrowser } from "../browser";
 import { canvasSize, type Asset } from "../marketing/assets";
 import { entryFiles, planDays } from "../marketing/folders";
-import { PLAN, QUOTES_TO_REVIEW, arabicDay as day, type Entry } from "../marketing/plan";
+import { PLAN, arabicDay as day, type Entry } from "../marketing/plan";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const OUT = path.join(ROOT, "marketing/launch-2026");
@@ -46,7 +46,6 @@ function calendar(): string {
     "",
     "## قبل النشر",
     "",
-    `- الاقتباسات (${QUOTES_TO_REVIEW.map(day).join("؛ ")}) يراجع المراجع الشرعي نصها وتخريجها قبل نشرها.`,
     "- في إنستغرام الرابط في النص لا يُضغط: الرابط في النبذة وفي ملصق الستوري. في فيسبوك يعمل كما هو.",
     "",
     "## التقويم",

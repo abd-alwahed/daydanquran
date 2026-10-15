@@ -429,9 +429,6 @@ export const PLAN: Entry[] = [
   },
 ];
 
-/** Quotes that the content reviewer must confirm (wording and source) before they are posted. */
-export const QUOTES_TO_REVIEW = PLAN.filter((e) => e.title.startsWith("اقتباس")).map((e) => e.date);
-
 /** "الجمعة، ١٦ أكتوبر" for a plan date. */
 export const arabicDay = (date: string): string =>
   new Date(`${date}T12:00:00Z`).toLocaleDateString("ar-EG", {

@@ -1,8 +1,8 @@
 /**
- * Adds the plan's feed posts to Buffer for Instagram and Facebook: schedules them at their Mecca time
- * while each channel has room (10 on the free plan), saves the rest as drafts, and skips any post Buffer
- * already has (matched by caption), so it can be re-run at any time. Quotes always go in as drafts until
- * the content reviewer approves them. Stories stay manual.
+ * Adds the plan's feed posts and stories to Buffer for Instagram and Facebook: schedules them at their
+ * Mecca time while each channel has room (10 on the free plan), saves the rest as dated drafts, and
+ * skips anything Buffer already has (posts by caption and date, stories by date), so it can be re-run
+ * at any time.
  *   pnpm --filter @daydan/media buffer:sync            preview only, changes nothing
  *   pnpm --filter @daydan/media buffer:sync --apply    creates the posts
  *   pnpm --filter @daydan/media buffer:sync --inspect  prints the API types this script relies on
@@ -99,16 +99,30 @@ async function existingPosts(organizationId: string, channelId: string): Promise
   for (;;) {
     const data: {
       posts: {
-        edges: { node: { text: string | null; status: string; dueAt: string | null } }[];
+        edges: {
+          node: {
+            text: string | null;
+            status: string;
+            dueAt: string | null;
+            metadata: { type?: string } | null;
+          };
+        }[];
         pageInfo: { hasNextPage: boolean; endCursor: string | null };
       };
     } = await gql(
       `query($organizationId: OrganizationId!, $channelId: ChannelId!, $after: String) {
         posts(first: 100, after: $after, input: { organizationId: $organizationId, filter: { channelIds: [$channelId] } }) {
-          edges { node { text status dueAt } } pageInfo { hasNextPage endCursor } } }`,
+          edges { node { text status dueAt metadata { ... on InstagramPostMetadata { type } ... on FacebookPostMetadata { type } } } } pageInfo { hasNextPage endCursor } } }`,
       { organizationId, channelId, after },
     );
-    found.push(...data.posts.edges.map((e) => ({ ...e.node, text: e.node.text ?? "" })));
+    found.push(
+      ...data.posts.edges.map(({ node }) => ({
+        text: node.text ?? "",
+        status: node.status,
+        dueAt: node.dueAt,
+        type: node.metadata?.type ?? null,
+      })),
+    );
     if (!data.posts.pageInfo.hasNextPage) return found;
     after = data.posts.pageInfo.endCursor;
   }
@@ -117,14 +131,14 @@ async function existingPosts(organizationId: string, channelId: string): Promise
 async function createPost(channel: Channel, post: BufferPost, action: "schedule" | "draft"): Promise<void> {
   const input = {
     channelId: channel.id,
-    text: post.text,
+    ...(post.text ? { text: post.text } : {}),
     schedulingType: "automatic",
     needsApproval: false,
     assets: post.images.map((url) => ({ image: { url } })),
     metadata:
       channel.service === "instagram"
-        ? { instagram: { type: "post", shouldShareToFeed: true } }
-        : { facebook: { type: "post" } },
+        ? { instagram: { type: post.type, shouldShareToFeed: true } }
+        : { facebook: { type: post.type } },
     // Drafts keep their planned time too, so they open ready to schedule and re-runs can tell the
     // Friday posts (same caption) apart by date.
     mode: "customScheduled",

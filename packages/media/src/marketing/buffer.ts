@@ -1,19 +1,19 @@
 import { canvasSize } from "./assets";
 import { entryFiles, type DayFile } from "./folders";
-import { QUOTES_TO_REVIEW, type Entry } from "./plan";
+import type { Entry } from "./plan";
 
 /** Buffer's free plan holds at most 10 scheduled posts per channel at a time. */
 export const SCHEDULED_MAX = 10;
 
-/** A plan post for Buffer: its caption, image URLs (in order) and Mecca time as a UTC instant. */
+/** A plan item for Buffer: a feed post (caption + images) or a story (one image, no text). */
 export interface BufferPost {
   date: string;
   title: string;
+  type: "post" | "story";
   text: string;
   images: string[];
+  /** Mecca time as a UTC instant. */
   dueAt: string;
-  /** Quotes wait for the content reviewer, so they only ever go in as drafts. */
-  needsReview: boolean;
 }
 
 const ARABIC_DIGITS = "٠١٢٣٤٥٦٧٨٩";
@@ -26,24 +26,45 @@ export function meccaToUtc(date: string, time: string): string {
   return new Date(`${date}T${match[1]}:${match[2]}:00+03:00`).toISOString();
 }
 
-/** Stories posted the same day (1080×1920: countdowns, Friday, launch, reminder) are not part of the post. */
+/** Stories are 1080×1920: countdowns, Friday, launch, reminder. */
 const isStory = (f: DayFile) =>
   "asset" in f ? canvasSize(f.asset.html).height === 1920 : f.name.includes("story");
 
-/** The plan's feed posts (stories stay manual), with their images on the public `mediaBase`. */
-export const bufferPosts = (plan: Entry[], mediaBase: string): BufferPost[] =>
-  plan
-    .filter((e) => e.kind === "منشور" && e.caption)
-    .map((e) => ({
+/** Stories with a fixed time of their own; any other story goes out at its entry's time. */
+const STORY_TIMES: Record<string, string> = {
+  "friday-story.png": "١٢:٠٠",
+  "reminder-story.png": "٢٠:٠٠",
+};
+
+/** The plan's feed posts and stories, in date order, with their images on the public `mediaBase`. */
+export function bufferPosts(plan: Entry[], mediaBase: string): BufferPost[] {
+  const url = (e: Entry, f: DayFile) => `${mediaBase}/${e.date}/${f.name}`;
+  return plan.flatMap((e) => {
+    const files = entryFiles(e);
+    const post: BufferPost[] =
+      e.kind === "منشور" && e.caption
+        ? [
+            {
+              date: e.date,
+              title: e.title,
+              type: "post",
+              text: e.caption,
+              images: files.filter((f) => !isStory(f)).map((f) => url(e, f)),
+              dueAt: meccaToUtc(e.date, e.time),
+            },
+          ]
+        : [];
+    const stories: BufferPost[] = files.filter(isStory).map((f) => ({
       date: e.date,
-      title: e.title,
-      text: e.caption!,
-      images: entryFiles(e)
-        .filter((f) => !isStory(f))
-        .map((f) => `${mediaBase}/${e.date}/${f.name}`),
-      dueAt: meccaToUtc(e.date, e.time),
-      needsReview: QUOTES_TO_REVIEW.includes(e.date),
+      title: `ستوري: ${f.name}`,
+      type: "story",
+      text: "",
+      images: [url(e, f)],
+      dueAt: meccaToUtc(e.date, STORY_TIMES[f.name] ?? e.time),
     }));
+    return [...post, ...stories];
+  });
+}
 
 /** Captions compare equal regardless of spacing differences Buffer or a paste may introduce. */
 export const sameText = (a: string, b: string): boolean =>
@@ -53,6 +74,7 @@ export const sameText = (a: string, b: string): boolean =>
 export interface ExistingPost {
   text: string;
   status: string;
+  type?: string | null;
   dueAt?: string | null;
 }
 
@@ -60,18 +82,15 @@ export interface ExistingPost {
 export const meccaDate = (instant: string): string =>
   new Date(new Date(instant).getTime() + 3 * 3600_000).toISOString().slice(0, 10);
 
-/**
- * Whether Buffer already has this post: same caption, and the same Mecca date when Buffer has one,
- * since the Friday posts share a caption and differ only by date.
- */
-export const alreadyIn = (post: BufferPost, existing: ExistingPost[]): boolean =>
-  existing.some((p) => sameText(p.text, post.text) && (!p.dueAt || meccaDate(p.dueAt) === post.date));
+const sameDate = (p: ExistingPost, date: string) => !p.dueAt || meccaDate(p.dueAt) === date;
 
 export type Action = "skip-exists" | "skip-past" | "schedule" | "draft";
 
 /**
- * What to do with each post on one channel: skip what Buffer already has (scheduled or draft, matched
- * by caption and date) or what is already past, schedule while the channel has room, and save the rest as drafts.
+ * What to do with each item on one channel: skip what Buffer already has, or what is already past,
+ * schedule while the channel has room, and save the rest as drafts. A post is matched by caption and
+ * date (the Friday posts share a caption). A story has no text, so a date's first N planned stories
+ * count as present when Buffer already has N stories on that date.
  */
 export function planActions(
   posts: BufferPost[],
@@ -79,10 +98,21 @@ export function planActions(
   now: Date,
 ): { post: BufferPost; action: Action }[] {
   let scheduled = existing.filter((p) => p.status === "scheduled").length;
+  const storiesSeen = new Map<string, number>();
   return posts.map((post) => {
-    if (alreadyIn(post, existing)) return { post, action: "skip-exists" };
+    let exists: boolean;
+    if (post.type === "story") {
+      const index = storiesSeen.get(post.date) ?? 0;
+      storiesSeen.set(post.date, index + 1);
+      exists = index < existing.filter((p) => p.type === "story" && sameDate(p, post.date)).length;
+    } else {
+      exists = existing.some(
+        (p) => p.type !== "story" && sameText(p.text, post.text) && sameDate(p, post.date),
+      );
+    }
+    if (exists) return { post, action: "skip-exists" };
     if (new Date(post.dueAt) <= now) return { post, action: "skip-past" };
-    if (!post.needsReview && scheduled < SCHEDULED_MAX) {
+    if (scheduled < SCHEDULED_MAX) {
       scheduled++;
       return { post, action: "schedule" };
     }

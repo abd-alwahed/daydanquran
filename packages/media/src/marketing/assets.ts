@@ -76,7 +76,7 @@ export const storyCountdown = (file: string, days: 1 | 2 | 3): Asset => {
   return { file, html };
 };
 
-/** Quote post. The quote and its source must be checked by the content reviewer before posting. */
+/** Quote post. The four hadiths in the plan were checked by the owner (2026-10-15). */
 export const postQuote = (file: string, quote: string, source: string): Asset => {
   let html = template("PostQuote");
   html = edit(html, "«أحبُّ الأعمالِ إلى الله أدومُها وإن قلّ»", `«${text(quote)}»`);
