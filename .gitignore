@@ -7,6 +7,9 @@ content/v1/
 apps/web/.next/
 apps/web/out/
 apps/web/public/p/
+apps/web/public/marketing/
+# Rendered by render:marketing; the code and calendar are committed, the images are not
+marketing/**/*.png
 apps/web/next-env.d.ts
 .wrangler/
 .env

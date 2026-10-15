@@ -10,6 +10,9 @@
     "render": "tsx src/cli/render.ts",
     "render:reminder": "tsx src/cli/render-reminder.ts",
     "render:instagram": "tsx src/cli/render-instagram.ts",
+    "render:marketing": "tsx src/cli/render-marketing.ts",
+    "send:marketing": "tsx src/cli/send-marketing.ts",
+    "buffer:sync": "tsx src/cli/buffer-sync.ts",
     "typecheck": "tsc -p .",
     "lint": "eslint src",
     "test": "vitest run"
