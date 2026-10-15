@@ -109,6 +109,20 @@ export class Canvas {
     );
   }
 
+  /** Text of every element whose box reaches outside the canvas (text too long for its template). */
+  overflowingText(): Promise<string[]> {
+    return this.page.evaluate((selector) => {
+      const canvas = document.querySelector(selector)!.getBoundingClientRect();
+      return [...document.querySelectorAll(`${selector} *`)]
+        .filter((e) => [...e.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()))
+        .filter((e) => {
+          const r = e.getBoundingClientRect();
+          return r.top < canvas.top || r.left < canvas.left || r.bottom > canvas.bottom || r.right > canvas.right;
+        })
+        .map((e) => (e.textContent ?? "").trim().slice(0, 60));
+    }, CANVAS);
+  }
+
   /** Checks every glyph's font (see `assertNoFallback`), then captures the canvas. */
   async screenshot(file: string): Promise<void> {
     await this.assertNoFallback();
