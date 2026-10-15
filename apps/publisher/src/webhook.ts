@@ -37,14 +37,15 @@ const WELCOME = [
   "صفحة من القرآن كل يوم، حتى يصير القرآن دَيْدَنك.",
   "",
   `صفحة اليوم مع التفسير والتلاوة: ${SITE_URL}`,
-  "وفي القناة @daydanquran اضغط «قرأت الورد ✅» بعد قراءتك، فنحفظ لك ختمتك.",
+  "وبعد قراءتك اضغط «قرأت الورد ✅» هنا أو في القناة @daydanquran، فنحفظ لك ختمتك.",
   "",
-  "/today صفحة اليوم",
-  "/read قرأت وِرد اليوم",
-  "/khatma ختمتي",
-  "/makeup اقضِ ما فاتك",
-  "/reminder تذكير يومي الساعة ٧ صباحاً",
-  "/about عن دَيْدَن",
+  // Arabic first on each line, so Telegram lays the line out right to left.
+  "صفحة اليوم: /today",
+  "قرأت وِرد اليوم: /read",
+  "ختمتي: /khatma",
+  "اقضِ ما فاتك: /makeup",
+  "تذكير يومي الساعة ٧ صباحاً: /reminder",
+  "عن دَيْدَن: /about",
 ].join("\n");
 
 /** "/reminder" or "/reminder@bot_name". */
